@@ -1,0 +1,7 @@
+*.o
+*.lo
+/*.a.xyzzy
+/*.so.xyzzy
+/config.mak
+/src/include/skabus/config.h
+/skabus-*

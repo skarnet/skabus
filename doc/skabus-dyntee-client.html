@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skabus: the skabus-dyntee-client program</title>
+    <meta name="Description" content="skabus: the skabus-dyntee-client program" />
+    <meta name="Keywords" content="skabus dynamic tee dyntee skabus-dyntee-client unix linux socket pubsub client" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">skabus</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>skabus-dyntee-client</tt> program </h1>
+
+<p>
+<tt>skabus-dyntee-client</tt> is a client for the
+<a href="skabus-dyntee.html">skabus-dyntee</a> server.
+It connects to a Unix domain socket where a
+<a href="skabus-dyntee.html">skabus-dyntee</a> instance is listening,
+then executes into a program with the data stream from skabus-dyntee
+on its standard input.
+</p>
+
+<h2> Interface </h2>
+
+<pre>
+     skabus-dyntee-client <em>path</em> <em>prog...</em>
+</pre>
+
+<ul>
+ <li> skabus-dyntee-client connects to the Unix domain socket at <em>path</em>.
+It assumes the other end of the socket is a <a href="skabus-dyntee.html">skabus-dyntee</a>
+(or <a href="skabus-dynteed.html">skabus-dynteed</a>, which is the same) instance. </li>
+ <li> It executes into the <em>prog...</em> command line with the
+socket as <em>prog</em>'s standard input. </li>
+</ul>
+
+<h2> Notes </h2>
+
+<ul>
+ <li> It is possible for <em>prog</em> to immediately get EOF on its
+standard input. This likely means that the server has denied the
+connection (skabus-dyntee-client did not run with an authorized uid
+or gid). But it could also mean that the stream ended right after
+the client connected. </li>
+ <li> The socket is shut down for writing, so <em>prog</em> can
+only read on its stdin; attempts to write will always fail. </li>
+</ul>
+
+</body>
+</html>

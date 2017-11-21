@@ -1,0 +1,27 @@
+skabus - a simpler Unix bus
+---------------------------
+
+ skabus is a suite of programs related to 1-to-many,
+many-to-1 or many-to-many interprocess communication on Unix.
+Ultimately, it will be a full implementation of a Unix bus,
+aiming for simplicity and maintainability.
+
+ For now, it is very much a work in progress, and it feels like
+a random collection of tools, even if it's not random.
+
+ See http://skarnet.org/software/skabus/ for details.
+
+
+* Installation
+  ------------
+
+ See the INSTALL file.
+
+
+* Contact information
+  -------------------
+
+ Laurent Bercot <ska-skaware at skarnet.org>
+
+ Please use the <skaware at list.skarnet.org> mailing-list for
+questions about skabus.

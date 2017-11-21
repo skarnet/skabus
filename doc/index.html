@@ -1,0 +1,134 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skabus - a Unix bus system</title>
+    <meta name="Description" content="skabus - a Unix bus system" />
+    <meta name="Keywords" content="skabus bus unix linux laurent bercot ska skarnet dbus ubus" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> skabus </h1>
+
+<h2> What is it&nbsp;? </h2>
+
+<p>
+ skabus is a suite of programs and libraries for Unix systems
+that aim to implement a bus, i.e. a many-to-many interprocess
+communication mechanism.
+</p>
+
+<p>
+ It is very much a work in progress, and won't be complete for a long time.
+For now, it looks like a random collection of tools, even though there is
+a consistent vision behind them.
+</p>
+
+<hr />
+
+<!--
+<ul>
+ <li> <a href="why.html">Why skabus&nbsp;?</a> Why not just use D-Bus&nbsp;?</li> -->
+ <li> <a href="overview.html">An overview of skabus</a> </li>
+</ul>
+
+<hr />
+-->
+
+<h2> Installation </h2>
+
+<h3> Requirements </h3>
+
+<ul>
+ <li> A POSIX-compliant system with a standard C development environment </li>
+ <li> GNU make, version 3.81 or later </li>
+ <li> <a href="//skarnet.org/software/skalibs/">skalibs</a> version
+2.6.1.0 or later </li>
+ <li> <a href="//skarnet.org/software/execline/">execline</a> version
+2.3.0.3 or later </li>
+ <li> <a href="//skarnet.org/software/s6/">s6</a> version
+2.6.1.1 or later </li>
+
+</ul>
+
+<h3> Licensing </h3>
+
+<p>
+ skabus is free software. It is available under the
+<a href="http://opensource.org/licenses/ISC">ISC license</a>.
+</p>
+
+<h3> Download </h3>
+
+<ul>
+ <li> The current released version of skabus is <a href="skabus-0.0.1.0.tar.gz">0.0.1.0</a>. </li>
+ <li> Alternatively, you can checkout a copy of the skabus git repository:
+<pre> git clone git://git.skarnet.org/skabus </pre> </li>
+</ul>
+
+<h3> Compilation </h3>
+
+<ul>
+ <li> See the enclosed INSTALL file for installation details. </li>
+</ul>
+
+<h3> Upgrade notes </h3>
+
+<ul>
+ <li> <a href="upgrade.html">This page</a> lists the differences to be aware of between
+the previous versions of skabus and the current one. </li>
+</ul>
+
+<hr />
+
+<h2> Reference </h2>
+
+<h3> Commands </h3>
+
+<p>
+ All these commands exit 111 if they encounter a temporary error or
+hardware error, and
+100 if they encounter a permanent error - such as a misuse. Short-lived
+commands exit 0 on success. Other exit codes are documented in the
+relevant page.
+</p>
+
+<h4> Publication/subscription </h4>
+
+<ul>
+ <li> The <a href="skabus-dyntee.html">skabus-dyntee</a> program </li>
+ <li> The <a href="skabus-dynteed.html">skabus-dynteed</a> program </li>
+ <li> The <a href="skabus-dyntee-client.html">skabus-dyntee-client</a> program </li>
+</ul>
+
+<hr />
+
+<a name="related">
+<h2> Related resources </h2>
+</a>
+
+<h3> skabus discussion </h3>
+
+<ul>
+ <li> <tt>skabus</tt> is discussed on the
+<a href="//skarnet.org/lists.html#skaware">skaware</a> mailing-list. </li>
+</ul>
+
+<h3> Similar work </h3>
+
+<ul>
+ <li> <a href="http://www.freedesktop.org/wiki/Software/dbus/">D-Bus</a> is
+the most widely used Linux bus. It's also a horrible, inefficient mess. </li>
+ <li> <a href="http://wiki.openwrt.org/doc/techref/ubus">ubus</a> is
+OpenWrt's micro-bus architecture. </li>
+</ul>
+
+</body>
+</html>

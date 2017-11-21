@@ -1,0 +1,154 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skabus: the skabus-dynteed program</title>
+    <meta name="Description" content="skabus: the skabus-dynteed program" />
+    <meta name="Keywords" content="skabus skabus-dynteed publisher dynamic tee daemon publication unix linux server daemon" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">skabus</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>skabus-dynteed</tt> program </h1>
+
+<p>
+<tt>skabus-dynteed</tt> is the serving part of the
+<a href="skabus-dyntee.html">skabus-dyntee</a> program.
+It assumes that one of its file descriptors (3 or above) is a
+bound, listening, non-blocking domain socket;
+it accepts connections from clients connecting to that socket,
+and copies its stdin stream to all its clients.
+</p>
+
+<h2> Interface </h2>
+
+<pre>
+     skabus-dynteed [ -1 ] [ -c <em>maxconn</em> ] [ -t <em>clienttimeout</em> ] [ -T <em>lameducktimeout</em> ] [ -i <em>rulesdir</em> | -x <em>rulesfile</em> ]
+</pre>
+
+<ul>
+ <li> skabus-dynteed accepts connections from clients to an already
+bound and listening SOCK_STREAM Unix domain socket, by default on
+its file descriptor 3. </li>
+ <li> It runs until it receives a SIGTERM or until it reads EOF
+on its stdin. In that case, it stops accepting new client connections,
+and exits 0 when all clients have read their pending data. </li>
+ <li> Client connections last as long as the client wants to, unless an
+error occurs, or unless the server is told to exit - in which cases
+skabus-dynteed forcibly disconnects the client. </li>
+ <li> Clients cannot write anything to skabus-dynteed. They can only
+read a stream of bytes on their socket, which is a copy of what
+skabus-dynteed reads on its standard input. </li>
+</ul>
+
+<h2> Options </h2>
+
+<ul>
+ <li> <tt>-1</tt>&nbsp;: write a newline to stdout, and close stdout,
+right before entering the client-accepting loop.
+If stdout is suitably redirected, this can be used by monitoring
+programs to check when the server is accepting connections. See
+<a href="//skarnet.org/software/s6/notifywhenup.html">this page</a>
+for more information on readiness notification. </li>
+ <li> <tt>-c&nbsp;<em>maxconn</em></tt>&nbsp;: accept at most
+<em>maxconn</em> concurrent connections. Default is 40. It is
+impossible to set it higher than the value of the SKABUS_DYNTEE_MAX macro,
+i.e. 1000. </li>
+ <li> <tt>-t&nbsp;<em>clienttimeout</em></tt>&nbsp;: disconnect a client
+if it has not read its pending data after <em>clienttimeout</em> milliseconds.
+By default, <em>clienttimeout</em> is 0, which means infinite. </li>
+ <li> <tt>-T&nbsp;<em>lameducktimeout</em></tt>&nbsp;: give clients
+<em>lameducktimeout</em> milliseconds to read their pending data when
+skabus-dynteed is going to exit.
+By default, <em>lameducktimeout</em> is 0, which means infinite. </li>
+ <li> <tt>-x&nbsp;<em>rulesfile</em></tt>&nbsp;: read access rights
+configuration from
+<a href="http://en.wikipedia.org/wiki/Cdb_%28software%29">CDB</a>
+file <em>rulesfile</em>. </li>
+ <li> <tt>-i&nbsp;<em>rulesdir</em></tt>&nbsp;: read access rights
+configuration from the filesystem in directory <em>rulesdir</em>. </li>
+</ul>
+
+<h2> Signals </h2>
+
+<ul>
+ <li> SIGTERM: enter lameduck mode, then exit when all clients have
+read their pending data (or <em>lameducktimeout</em> milliseconds have
+elapsed). </li>
+ <li> SIGHUP: reopen <em>rulesfile</em>, if skabus-dynteed has been run
+with the <tt>-x</tt> option. It is not necessary to send skabus-dynteed
+a SIGHUP when the <tt>-i</tt> option is used instead: configuration
+changes in the filesystem are automatically picked up. </li>
+</ul>
+
+<a name="configuration">
+<h2> Configuration </h2>
+</a>
+
+<p>
+skabus-dynteed (or its wrapper <a href="skabus-dyntee.html">skabus-dyntee</a>)
+can be instructed not to accept every client. This is achieved
+via a series of rules, or <em>ruleset</em>, stored in either a
+<em>rulesfile</em> in the
+<a href="http://en.wikipedia.org/wiki/Cdb_%28software%29">CDB</a> format,
+and given to skabus-dynteed with the <tt>-x</tt> option,
+or in a <em>rulesdir</em>, i.e. a directory in the filesystem following a
+certain format, and given to skabus-dynteed with the <tt>-i</tt> option.
+If neither the <tt>-i</tt> nor the <tt>-x</tt> option has been provided,
+skabus-dynteed will accept connections from any client.
+</p>
+
+<p>
+ Rulesets can be converted between the <em>rulesdir</em> and
+<em>rulesfile</em> formats with the
+<a href="s6-accessrules-cdb-from-fs.html">s6-accessrules-cdb-from-fs</a> and
+<a href="s6-accessrules-fs-from-cdb.html">s6-accessrules-fs-from-cdb</a>
+conversion tools.
+</p>
+
+<h3> Rules format </h3>
+
+<p>
+ The rules file, or rules directory, follows the
+<a href="libs6/accessrules.html">s6 accessrules format</a> for uid and
+gid checking. For every connecting client, skabus-dynteed matches the uid
+and gid of the client against the provided ruleset, and determines whether
+the client is authorized or not to connect.
+The right to connect is given if an
+<tt>allow</tt> file is found in one of the subdirectories checked by
+<a href="libs6/accessrules.html#uidgid">s6_accessrules_keycheck_uidgid</a>.
+For instance, to allow everyone to connect, touch
+<tt><em>rulesdir</em>/uid/default/allow</tt>.
+</p>
+
+<p>
+ If a <em>rulesfile</em> or <em>rulesdir</em> has been provided to
+skabus-dynteed, and the client's uid and gid match no rule in the
+ruleset, then the connection is denied.
+</p>
+
+<h2> Notes </h2>
+
+<ul>
+ <li> skabus-dynteed is meant to be execve'd into by a program that gets
+the listening socket. That program is normally
+<a href="//skarnet.org/software/s6/s6-ipcserver-socketbinder.html">s6-ipcserver-socketbinder</a>,
+which creates the socket itself; but it can be a different one if the
+socket is to be obtained by another means, for instance if it has
+been retrieved from a fd-holding daemon. </li>
+ <li> Clients can plug into the data stream at any time. The data stream
+should have a format making it easy for clients to synchronize with it. </li>
+ <li> The simplest way of connecting to a skabus-dynteed instance and
+reading the data stream is via the
+<a href="skabus-dyntee-client.html">skabus-dyntee-client</a> program. </li>
+</ul>
+
+</body>
+</html>
