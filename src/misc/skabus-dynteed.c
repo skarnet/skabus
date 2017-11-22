@@ -231,9 +231,9 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
       if (x[0].revents & IOPAUSE_READ) handle_signals() ;
 
-      for (unsigned int i = 0 ; i < numconn ; i++)
+      for (unsigned int i = 0 ; i < numconn ; i++) if (bufalloc_len(&clients[i].ba))
       {
-        if (x[clients[i].xindex].events & x[clients[i].xindex].revents & (IOPAUSE_WRITE | IOPAUSE_EXCEPT))
+        if (x[clients[i].xindex].revents & (IOPAUSE_WRITE | IOPAUSE_EXCEPT))
         {
           if (!bufalloc_flush(&clients[i].ba) && !error_isagain(errno))
           {
