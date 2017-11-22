@@ -6,9 +6,9 @@ src/misc/skabus-dyntee-client.o src/misc/skabus-dyntee-client.lo: src/misc/skabu
 src/misc/skabus-dyntee.o src/misc/skabus-dyntee.lo: src/misc/skabus-dyntee.c src/include/skabus/config.h
 src/misc/skabus-dynteed.o src/misc/skabus-dynteed.lo: src/misc/skabus-dynteed.c
 
-skabus-dyntee: EXTRA_LIBS :=
+skabus-dyntee: EXTRA_LIBS := ${SOCKET_LIB}
 skabus-dyntee: src/misc/skabus-dyntee.o -lskarnet
-skabus-dyntee-client: EXTRA_LIBS :=
+skabus-dyntee-client: EXTRA_LIBS := ${SOCKET_LIB}
 skabus-dyntee-client: src/misc/skabus-dyntee-client.o -lskarnet
 skabus-dynteed: EXTRA_LIBS :=
 skabus-dynteed: src/misc/skabus-dynteed.o -ls6 -lskarnet
