@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+#include <skabus/rpc.h>
 
 #ifdef __cplusplus
 }

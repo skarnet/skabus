@@ -1,0 +1,82 @@
+
+ Registering (1st connection) (client -> server)
+
+ 'S' : 1
+ pmid : 4
+ idlen : 1
+ relen : 4
+ idstr : idlen
+ '\0' : 1
+ re : relen
+ '\0' : 1
+
+ Sending a query (qclient -> server)
+
+ 'Q' : 1
+ deadline : TAIN_PACK (12)
+   contains sec(8), nano(4)
+ iflen : 1
+ ifname : iflen
+ '\0' : 1
+ msg : msglen
+
+
+ Sending a query (server -> rclient)
+
+ 'Q' : 1
+ ifid : 4
+ rinfo: SKABUS_RPC_RINFO_PACK
+   contains serial(8), deadline(12), timestamp(12), uid(4), gid(4), idstr(SKABUS_RPC_IDSTR_SIZE), '\0'(1)
+ msg : msglen
+
+
+ Sending a reply (rclient -> server)
+
+ 'R' : 1
+ serial : 8
+ result : 1
+ msg : msglen
+
+
+ Sending a reply (server -> qclient)
+
+ 'R' : 1
+ serial : 8
+ status : 1. If not '\0', the rest is ignored.
+ result : 1
+ msg : msglen
+
+
+ Cancelling a query (qclient -> server)
+
+ 'C' : 1
+ serial : 8
+
+
+ Cancelling a query (server -> rclient)
+
+ 'C' : 1
+ ifid : 4
+ serial : 8
+ reason : 1
+
+
+ Registering an interface (client -> server)
+
+ 'I' : 1
+ ifid : 4
+ iflen : 1
+ relen : 4
+ ifname : iflen
+ '\0' : 1
+ re : relen
+ '\0' : 1
+
+
+ Unregistering an interface (client -> server)
+
+ 'i' : 1
+ iflen : 1
+ ifname : iflen
+ '\0' : 1
+

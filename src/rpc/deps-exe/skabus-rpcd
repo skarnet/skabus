@@ -1,0 +1,8 @@
+skabus_rpcd_client.o
+skabus_rpcd_interface.o
+skabus_rpcd_query.o
+libskabus.a.xyzzy
+-ls6
+-lskarnet
+${TAINNOW_LIB}
+${SOCKET_LIB}
