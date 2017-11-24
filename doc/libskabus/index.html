@@ -1,0 +1,127 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skabus: the skabus library interface</title>
+    <meta name="Description" content="skabus: the skabus library interface" />
+    <meta name="Keywords" content="skabus libskabus unix bus pubsub rpc mapper client library" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="../">skabus</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>skabus</tt> library interface </h1>
+
+<h2> General information </h2>
+
+<p>
+ <tt>libskabus</tt> is a collection of C client libraries used
+to communicate with the various skabus daemons.
+</p>
+
+<h2> Compiling </h2>
+
+<ul>
+ <li> Make sure the skabus headers, as well as the skalibs headers,
+are visible in your header search path. </li>
+ <li> Use <tt>#include &lt;skabus/skabus.h&gt;</tt> </li>
+</ul>
+
+<h2> Linking </h2>
+
+<ul>
+ <li> Make sure the skabus libraries, as well as the skalibs
+libraries, are visible in your library search path. </li>
+ <li> Link against <tt>-lskabus</tt> and <tt>-lskarnet</tt>.
+If you're using socket functions (which is the case with
+<a href="rpc.html">skabus_rpc</a>, for instance, add
+<tt>`cat $sysdeps/socket.lib`</tt> to your command line.
+If you're using timed functions involving TAI timestamps
+(which is also the case with <a href="rpc.html">skabus_rpc</a>
+for instance), add
+<tt>`cat $sysdeps/tainnow.lib`</tt>. <tt>$sysdeps</tt>
+stands for your skalibs sysdeps directory. </li>
+</ul>
+
+<h2> Programming </h2>
+
+<h3> Preamble: synchronous functions </h3>
+
+<p>
+ The bulk of <tt>libskabus</tt> functions takes two extra arguments at the
+end: <em>deadline</em> and <em>stamp</em>. Their type is
+<a href="//skarnet.org/software/skalibs/libstddjb/tai.html">tain_t</a>. This means
+they are synchronous function calls, and the extra arguments are there to ensure
+those calls do not block forever.
+</p>
+
+<p>
+<em>stamp</em> must be first initialized to an
+accurate enough approximation of the current time, for instance via skalibs'
+<tt>tain_now()</tt> function; it will then be automatically updated by the
+skabus function calls to always contain (an accurate enough approximation
+of) the current time.
+</p>
+
+<p>
+<em>deadline</em> is an absolute date. The meaning is: if the function has
+not returned by <em>deadline</em>, its operation is interrupted, and it
+will immediately return with a failure code, and <tt>errno</tt>
+will be set to <tt>ETIMEDOUT</tt>.
+</p>
+
+<p>
+<em>deadline</em> and <em>stamp</em> are used internally to compute a
+timeout, because blocking functions such as
+<a href="http://pubs.opengroup.org/onlinepubs/9699919799/functions/poll.html">poll()</a>
+use timeouts. The functions (like most skarnet.org functions) prefer to
+take a deadline and a timestamp instead of a timeout, because it's much
+easier (for both the application and the library's implementation) to
+work with absolute deadlines and update a timestamp regularly than it is
+to recompute a bunch of timeouts after every operation that potentially
+takes time.
+</p>
+
+<p>
+ <a href="//skarnet.org/software/skalibs/">skalibs</a> can keep track of the
+timestamp for you, in the global <tt>STAMP</tt> variable. All <tt>libskabus</tt>
+functions taking a <em>deadline</em> and <em>stamp</em> argument also have a
+version with a name ending in <tt>_g</tt>, that does not take <em>stamp</em>, and
+assumes the <tt>STAMP</tt> variable always contains (an accurate
+enough approximation of) the current time.
+<p>
+
+<p>
+ Those synchronous function calls normally return almost instantly: there should
+be no blocking code path between the function call and its return. Nevertheless,
+since they involve communication with another process, they are at the whim
+of the scheduler, so it's impossible to guarantee that they will never block.
+The use of the <em>deadline</em> and <em>stamp</em> arguments
+ensures there is a cap on the amount of time they block.
+</p>
+
+<h3> skabus functions </h3>
+
+<p>
+ The <tt>skabus/skabus.h</tt> header is actually a
+concatenation of other headers:
+the libskabus is separated into several modules, each of them with its
+own header.
+</p>
+
+<ul>
+ <li> The <a href="rpc.html">skabus/rpc.h</a> header provides
+functions to communicate with a
+<a href="../skabus-rpcd.html">skabus-rpcd</a> server, and help
+clients serve RPC calls or perform RPC calls to other registered
+clients. </li>
+</ul>
+
+</body>
+</html>

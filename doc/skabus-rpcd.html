@@ -1,0 +1,259 @@
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="Content-Language" content="en" />
+    <title>skabus: the skabus-rpcd program</title>
+    <meta name="Description" content="skabus: the skabus-rpcd program" />
+    <meta name="Keywords" content="skabus skabus-rpcd rpc remote procedure call daemon unix server daemon" />
+    <!-- <link rel="stylesheet" type="text/css" href="//skarnet.org/default.css" /> -->
+  </head>
+<body>
+
+<p>
+<a href="index.html">skabus</a><br />
+<a href="//skarnet.org/software/">Software</a><br />
+<a href="//skarnet.org/">skarnet.org</a>
+</p>
+
+<h1> The <tt>skabus-rpcd</tt> program </h1>
+
+<p>
+<tt>skabus-rpcd</tt> is the serving part of the
+<a href="skabus-rpc-daemon.html">skabus-rpc-daemon</a>
+RPC mapper daemon.
+It assumes that its stdin is a bound and listening Unix
+domain socket;
+it accepts connections from clients connecting to that socket,
+and transmits messages between clients.
+</p>
+
+<h2> Overview and terminology </h2>
+
+<ul>
+ <li> Every program connecting to skabus-rpcd, for instance using the
+<a href="libskabus/rpc.html">skabus_rpc library</a>, is called a
+<em>client</em>. This is standard Unix client-server terminology. </li>
+ <li> A client can have two functions:
+  <ul>
+   <li> It can implement and register an <em>interface</em>. </li>
+   <li> It can perform <em>queries</em> to an <em>interface</em>
+provided by another client. </li>
+  </ul>
+  A client can perform both functions. </li>
+ <li> skabus-rpcd is the <em>RPC mapper</em>. It accepts interface
+registrations, and client queries. It directs queries made to an
+interface to the client that implements that interface, and directs
+the <em>reply</em> to the client that made the query. </li>
+ <li> A client making a query is called a <em>qclient</em>. A
+client replying to a query is called a <em>rclient</em>. skabus-rpcd
+tries to be as transparent and out-of-the-way as possible: all a qclient
+is interested in is getting its query to the corresponding rclient, and
+getting the reply from said rclient. skabus-rpcd's only job is to get
+the queries and replies to the appropriate processes. </li>
+</ul>
+
+
+<h2> Interface </h2>
+
+<pre>
+     skabus-rpcd [ -1 ] [ -v verbosity ] [ -c <em>maxconn</em> ] [ -t <em>clienttimeout</em> ] [ -T <em>lameducktimeout</em> ] [ -i <em>rulesdir</em> | -x <em>rulesfile</em> ] [ -S | -s ] [ -J | -j ]
+</pre>
+
+<ul>
+ <li> skabus-rpcd accepts connections from clients to an already
+bound and listening SOCK_STREAM Unix domain socket which is its
+standard input. </li>
+ <li> It runs until it receives a SIGTERM, in which case it will
+stop accepting new client operations, and exit 0 when the pending
+operations have completed. </li>
+ <li> Client connections last as long as the client wants to, unless an
+error occurs, or unless the server is told to exit - in which cases
+skabus-rpcd forcibly disconnects the client. </li>
+ <li> Clients can perform operations by calling the appropriate
+functions in the <a href="libskabus/rpc.html">skabus_rpc</a> library. </li>
+</ul>
+
+<h2> Operation </h2>
+
+<ul>
+ <li> A client <em>connects</em> to skabus-rpcd. </li>
+ <li> A client <em>registers itself</em> to skabus-rpcd, giving it
+the <em>identifier</em> it wishes to acquire. This identifier can
+be any string, up to SKABUS_RPC_IDSTR_SIZE (254) characters.
+Depending on skabus-rpcd's configuration, not every client is
+allowed to use any string, see below. </li>
+ <li> A client may <em>register interfaces</em>. For every
+interface it wishes to register, it gives skabus-rpcd an
+<em>interface name</em>, which is the name qclients will access
+that interface under. It also provides an <em>interface body</em>,
+which contains pointers to functions that will be called to serve
+queries made to that interface. (The interface body is not sent to
+skabus-rpcd: it's only relevant inside the rclient's address space.) </li>
+ <li> A qclient can send <em>queries</em> to an interface. A query is
+just an array of bytes, possibly coupled with an array of file
+descriptors (if the qclient is authorized to send file descriptors).
+skabus-rpcd routes the query to the rclient that has registered
+the interface. </li>
+ <li> The rclient receives the query, with a little additional
+information from skabus-rpcd: a timestamp, the qclient's identifier,
+the qclient's credentials. The appropriate callback declared in
+the <em>interface body</em> is run, and the reply is sent to
+skabus-rpcd, which routes it back to the qclient. </li>
+</ul>
+
+<p>
+ skabus-rpcd only performs low-level operations and message routing.
+Client identifiers, interface names and queries are strings or arrays
+of bytes - they are not structured. It's up to the client programs
+to decide on a structure for the queries, a protocol between qclient
+and rclient.
+</p>
+
+<h2> Options </h2>
+
+<ul>
+ <li> <tt>-1</tt>&nbsp;: write a newline to stdout, and close stdout,
+right before entering the client-accepting loop.
+If stdout is suitably redirected, this can be used by monitoring
+programs to check when the server is accepting connections. See
+<a href="//skarnet.org/software/s6/notifywhenup.html">this page</a>
+for more information on readiness notification. </li>
+ <li> <tt>-v&nbsp;<em>verbosity</em></tt>&nbsp;: be more or less
+verbose. <em>verbosity</em> can be 0 (quiet), 1 (normal), or 2 or more
+(verbose). </li>
+ <li> <tt>-c&nbsp;<em>maxconn</em></tt>&nbsp;: accept at most
+<em>maxconn</em> concurrent connections. Default is 40. It is
+impossible to set it higher than the value of the SKABUS_RPC_MAX macro,
+i.e. 1000. </li>
+ <li> <tt>-t&nbsp;<em>clienttimeout</em></tt>&nbsp;: disconnect a client
+if it's in the middle of an operation and it has not written or read any
+data in <em>clienttimeout</em> milliseconds. By default, <em>clienttimeout</em>
+is 0, which means infinite. </li>
+ <li> <tt>-T&nbsp;<em>lameducktimeout</em></tt>&nbsp;: give clients
+<em>lameducktimeout</em> milliseconds to finish their current operations
+before exiting after receiving a SIGTERM. By default, <em>lameducktimeout</em>
+is 0, which means infinite. </li>
+ <li> <tt>-x&nbsp;<em>rulesfile</em></tt>&nbsp;: read access rights
+configuration from
+<a href="http://en.wikipedia.org/wiki/Cdb_%28software%29">CDB</a>
+file <em>rulesfile</em>. </li>
+ <li> <tt>-i&nbsp;<em>rulesdir</em></tt>&nbsp;: read access rights
+configuration from the filesystem in directory <em>rulesdir</em>. </li>
+ <li> <tt>-S</tt>&nbsp;: no open registration. Clients that cannot find
+a matching <tt>env/SKABUS_RPC_ID_REGEX</tt> entry in their accepted
+ruleset are forbidden to register themselves. This is the default. </li>
+ <li> <tt>-s</tt>&nbsp;: open registration. If the accepted ruleset
+for the client does not contain a <tt>env/SKABUS_RPC_ID_REGEX</tt> entry,
+the client is authorized to register itself with any identifier. </li>
+ <li>  <tt>-J</tt>&nbsp;: no open interface registration. If the accepted
+ruleset for the client does not contain a <tt>env/SKABUS_RPC_INTERFACES_REGEX</tt> entry,
+the client will be unable to register interfaces. This is the default. </li>
+ <li> <tt>-j</tt>&nbsp;: open interface registration. If the accepted ruleset
+for the client does not contain a <tt>env/SKABUS_RPC_ID_REGEX</tt> entry,
+the client is authorized to register interfaces with any name. </li>
+</ul>
+
+<h2> Signals </h2>
+
+<ul>
+ <li> SIGTERM: enter lameduck mode (stop accepting new clients and new
+operations), then exit when no more operation is pending. </li>
+ <li> SIGHUP: reopen <em>rulesfile</em>, if skabus-rpcd has been run
+with the <tt>-x</tt> option. It is not necessary to send skabus-rpcd
+a SIGHUP when the <tt>-i</tt> option is used instead: configuration
+changes in the filesystem are automatically picked up. </li>
+</ul>
+
+<a name="configuration">
+<h2> Configuration </h2>
+</a>
+
+<p>
+ Before running skabus-rpcd (or its wrapper
+<a href="skabus-rpc-daemon.html">skabus-rpc-daemon</a>), it is necessary
+to configure it. This is done by a series of rules, or <em>ruleset</em>,
+stored in either a <em>rulesfile</em> in the
+<a href="http://en.wikipedia.org/wiki/Cdb_%28software%29">CDB</a> format,
+or in a <em>rulesdir</em>, i.e. a directory in the filesystem following a
+certain format. skabus-rpcd will refuse to run if neither the <tt>-i</tt>
+nor the <tt>-x</tt> option has been provided.
+</p>
+
+<p>
+ Rulesets can be converted between the <em>rulesdir</em> and
+<em>rulesfile</em> formats with the
+<a href="//skarnet.org/software/s6/s6-accessrules-cdb-from-fs.html">s6-accessrules-cdb-from-fs</a> and
+<a href="//skarnet.org/software/s6/s6-accessrules-fs-from-cdb.html">s6-accessrules-fs-from-cdb</a>
+conversion tools.
+</p>
+
+<h3> Rules format </h3>
+
+<p>
+ The rules file, or rules directory, follows the
+<a href="//skarnet.org/software/s6/libs6/accessrules.html">s6 accessrules format</a>
+for uid and gid checking. For every connecting client, skabus-rpcd matches the uid
+and gid of the client against the provided ruleset, and determines what
+the client is authorized to do.
+</p>
+
+<p>
+ By default, no client is allowed to do anything - not even
+connect to the server. Even <tt>root</tt>, the super-user, will be denied
+access. That is why
+it is essential to create a sensible ruleset prior to running the server
+in order to do anything useful.
+</p>
+
+<p>
+ Here is how to configure a rulesdir for a client running as uid <em>u</em>.
+It is also possible to configure rules for clients running under gid
+<em>g</em> by replacing <tt>uid/<em>u</em></tt> with <tt>gid/<em>g</em></tt>
+il all the examples below. The default behaviour can be configured under
+<tt>uid/default</tt>. It is also possible to use a rulesfile instead
+by writing a rulesdir and converting it to a rulesfile with the
+<a href="//skarnet.org/software/s6/s6-accessrules-cdb-from-fs.html">s6-accessrules-cdb-from-fs</a>
+program.
+</p>
+
+<ul>
+ <li> If the <tt>uid/<em>u</em>/allow</tt> file exists, the client will be
+authorized to connect to the server. This is a prerequisite for
+doing anything. </li>
+ <li> The <tt>uid/<em>u</em>/env/SKABUS_RPC_ID_REGEX</tt> file
+should contain a regular expression. The client will be authorized to
+register itself using an identifier that matches that regular
+expression. If the file does not exist, the default behaviour is
+given by the <tt>-S</tt> or </tt>-s</tt> option to skabus-rpcd. </li>
+ <li> The <tt>uid/<em>u</em>/env/SKABUS_RPC_INTERFACES_REGEX</tt> file
+should contain a regular expression. The client will be authorized to
+register interfaces with names that match that regular
+expression. If the file does not exist, the default behaviour is
+given by the <tt>-J</tt> or </tt>-j</tt> option to skabus-rpcd. </li>
+ <li> If the <tt>uid/<em>u</em>/env/SKABUS_RPC_QSENDFDS</tt> file
+exists <em>and is not empty</em>, the client will be allowed to send
+queries containing open file descriptors. If the file exists and is
+empty, the client will be explicitly denied this right: it will only
+be allowed to send purely textual queries. </li>
+ <li> If the <tt>uid/<em>u</em>/env/SKABUS_RPC_RSENDFDS</tt> file
+exists <em>and is not empty</em>, the client will be allowed to send
+replies containing open file descriptors to the queries it gets.
+If the file exists and is
+empty, the client will be explicitly denied this right: it will only
+be allowed to reply with purely textual answers. </li>
+</ul>
+
+<h2> Notes </h2>
+
+<ul>
+ <li> skabus-rpcd is meant to be execve'd into by a program that gets
+the listening socket. That program is normally
+<a href="//skarnet.org/software/s6/s6-ipcserver-socketbinder.html">s6-ipcserver-socketbinder</a>,
+which creates the socket itself; but it can be a different one if the
+socket is to be obtained by another means, for instance if it has
+been retrieved from a fd-holding daemon. </li>
+</ul>
+
+</body>
+</html>

@@ -19,16 +19,16 @@
  ifname : iflen
  '\0' : 1
  msg : msglen
-
+ A PM is the same as a query, except the ifname starts with a 0xff char
+and contains an idstr instead of an ifname. 
 
  Sending a query (server -> rclient)
 
  'Q' : 1
  ifid : 4
  rinfo: SKABUS_RPC_RINFO_PACK
-   contains serial(8), deadline(12), timestamp(12), uid(4), gid(4), idstr(SKABUS_RPC_IDSTR_SIZE), '\0'(1)
+   contains serial(8), deadline(12), timestamp(12), uid(sizeof(uid_t)), gid(sizeof(gid_t)), idstr(SKABUS_RPC_IDSTR_SIZE), '\0'(1)
  msg : msglen
-
 
  Sending a reply (rclient -> server)
 
