@@ -100,6 +100,11 @@ int parse_protocol_async (unixmessage_t const *m, void *p)
     unixmessage_drop(m) ;
     return 1 ;
   }
+  if (INTERFACE(QUERY(qq)->interface)->client != *(uint32_t *)p)
+  {
+    unixmessage_drop(m) ;
+    return 1 ;
+  }
   query_reply(qq, m->s[9], &mtosend) ;
   return 1 ;
 }

@@ -29,13 +29,411 @@ other clients.
 <h2> Programming </h2>
 
 <p>
- Check the <tt>skabus/rpc.h</tt> header for the
-exact function prototypes.
+ Check the <tt>skabus/rpc.h</tt> header for details of the data
+types and function prototypes.
+</p>
+
+<h3> Overview, data types, interface callbacks </h3>
+
+<p>
+ A client starts by defining a <tt>skabus_rpc_t</tt> handle,
+initializing it to <tt>SKABUS_RPC_ZERO</tt>. It then passes a
+pointer to this handle in all its subsequent skabus_rpc calls,
+starting with <tt>skabus_rpc_init()</tt> and ending with
+<tt>skabus_rpc_end()</tt>.
+</p>
+
+<p>
+ At initialization time, as well as interface registration time,
+the client must provide a pointer to a
+<tt>skabus_rpc_interface_t</tt> structure. This structure contains
+the following fields:
+</p>
+
+<ul>
+ <li> <tt>f</tt>: a pointer to a function of type <tt>skabus_rpc_r_func_t</tt> </li>
+ <li> <tt>cancelf</tt>: a pointer to a function of type <tt>skabus_rpc_rcancel_func_t</tt> </li>
+ <li> <tt>data</tt>: a <tt>void *</tt> pointer </li>
+</ul>
+
+<p>
+ <tt>f</tt> is the callback function that will be called when the interface
+receives a query. Its prototype is
+<code>int f (skabus_rpc_t *a, skabus_rpc_rinfo_t const *info, unixmessage_t const *m, void *aux)</code>.
+</p>
+
+<ul>
+ <li> <tt>a</tt> is the handle to the client, to be used when calling the <tt>skabus_rpc_reply()</tt> function
+to send a reply. </tt> </li>
+ <li> <tt>info</tt> is a pointer to a non-writable <tt>skabus_rpc_rinfo_t</tt> structure containing information
+on the query and the qclient. This structure contains at least the following fields:
+  <ul>
+   <li> <tt>serial</tt>: a <tt>uint64_t</tt> integer that is the serial number of the query,
+to be used when calling <tt>skabus_rpc_reply()</tt>. </li>
+   <li> <tt>limit</tt>: a <tt>tain_t</tt> absolute date after which the query will expire -
+it's given as an indication so the rclient can stop handling the query if the reply is not
+ready by <tt>limit</tt>. </li>
+   <li> <tt>timestamp</tt>: a <tt>tain_t</tt> absolute date which is the time when the
+query was issued (as seen by <a href="../skabus-rpcd.html">skabus-rpcd</a>). </li>
+   <li> <tt>uid</tt>: a <tt>uid_t</tt>, the qclient's uid. </li>
+   <li> <tt>gid</tt>: a <tt>gid_t</tt>, the qclient's gid. </li>
+   <li> <tt>idstr</tt>: a pointer to a string of at most SKABUS_RPC_IDSTR_SIZE bytes
+(plus a terminating null byte) containing the qclient's identifier. </li>
+  </ul>
+  The <tt>uid</tt>, <tt>gid</tt> and <tt>idstr</tt> field can be used to filter queries
+if the rclient only authorizes specific qclients to send them. This is in addition
+to the pre-filtering done by the server via regex on <tt>idstr</tt>. </li>
+ <li> <tt>m</tt> is a pointer to a non-writable <tt>unixmessage_t</tt> structure
+containing the query itself. This structure contains at least the following fields:
+  <ul>
+   <li> <tt>s</tt>: a <tt>char *</tt> pointing to the text of the query </li>
+   <li> <tt>len</tt>: a <tt>size_t</tt> containing the length of the query </li>
+   <li> <tt>fds</tt>: a <tt>int *</tt> pointing to an array of open file descriptors, if any </li>
+   <li> <tt>nfds</tt>: an <tt>unsigned int</tt> containing the number of file descriptors pointed to by <tt>fds</tt> </li>
+  </ul>
+ If the query ends up being unused, <tt>f</tt> needs to call <tt>unixmessage_drop(m)</tt> in order to
+close any potential file descriptors contained in the query. </li>
+ <li> <tt>aux</tt> is the auxiliary <tt>data</tt> pointer provided at registration time in
+the <tt>skabus_rpc_interface_t</tt> structure (see below). </li>
+</ul>
+
+<p>
+ <tt>cancelf</tt> is the callback function that will be called if the qclient,
+or <a href="../skabus-rpcd.html">skabus-rpcd</a>, cancels a query made to the interface.
+Its prototype is
+<code>int cancelf (uint64_t serial, char reason, void *aux)</code>.
+</p>
+
+<ul>
+ <li> <tt>serial</tt> is the serial number of the query being cancelled </li>
+ <li> <tt>reason</tt> is the reason for the cancellation. 0 means the qclient
+explicitly asked for a cancellation. Any other value is an <em>errno</em> value
+meaning something failed in the <a href="../skabus-rpcd.html">skabus-rpcd</a>
+server and it had to cancel the query. </li>
+ <li> <tt>aux</tt> is the auxiliary <tt>data</tt> pointer provided at registration time in
+the <tt>skabus_rpc_interface_t</tt> structure (see below). </li>
+</ul>
+
+<p>
+ <tt>data</tt> is an arbitrary pointer chosen by the rclient to point to arbitrary
+data, for whatever purpose the rclient may see fit. This pointer will be given as
+the <tt>aux</tt> argument to the <tt>f</tt> or <tt>cancelf</tt> callbacks when
+they're called.
 </p>
 
 <h3> Starting and ending a session </h3>
 
-<em>to be continued</em>
+<h4> <code>int skabus_rpc_init (skabus_rpc_t *a, char const *path, char const *id, skabus_rpc_interface_t const *ifbody, char const *re, tain_t const *deadline, tain_t *stamp)</code> </h4>
+
+<p>
+ Starts a session with an instance of <a href="../skabus-rpcd.html">skabus-rpcd</a> listening
+on the socket at <em>path</em>. The client attempts to register the <em>id</em> identifier
+for itself, and will reply to private queries (queries directly sent to it, instead of to an
+interface) with the functions defined in <em>ifbody</em>. Only qclients whose identifiers match the
+<em>re</em> regular expression will be able to send private queries.
+</p>
+
+<p>
+ If no private queries are to be served, <tt>&amp;skabus_rpc_interface_zero</tt> can be
+used as an <em>ifbody</em> argument; and a never-matching regular expression, such
+as <tt>.^</tt>, should be used as a <em>re</em> argument.
+</p>
+
+<p>
+ The client must be authorized to use <em>id</em> as an identifier. That means
+<em>id</em> must match the regular expression given as an <tt>env/SKABUS_RPC_ID_REGEX</tt>
+entry for the client's uid or gid in the <a href="../skabus-rpcd.html#configuration">skabus-rpcd configuration</a>.
+</p>
+
+<p>
+ On success, the function returns nonzero. The <em>a</em> handle then needs to be
+used as the first argument to all the subsequent <tt>skabus_rpc</tt> function calls.
+On failure, the function returns 0, and sets errno.
+</p>
+
+<h4> <code> void skabus_rpc_end (skabus_rpc_t *a)</code> </h4>
+
+<p>
+  Ends the current session with handle <em>a</em>.
+</p>
+
+<h3> Registering and unregistering an interface </h3>
+
+<h4> <code> int skabus_rpc_interface_register (skabus_rpc_t *a, uint32_t *ifid, char const *ifname, skabus_rpc_interface_t const *ifbody, char const *re, tain_t const *deadline, tain_t *stamp)</code> </h4>
+
+<p>
+ Registers an interface with name <em>ifname</em> and implementation pointed to
+by <em>ifbody</em>. qclients wanting to send queries to <em>ifname</em> will need
+to have an identifier matching the <em>re</em> regular expression.
+</p>
+
+<p>
+ The rclient must be authorized to use <em>ifname</em> as an interface name. That means
+<em>ifname</em> must match the regular expression given as an <tt>env/SKABUS_RPC_INTERFACES_REGEX</tt>
+entry for the rclient's uid or gid in the <a href="../skabus-rpcd.html#configuration">skabus-rpcd configuration</a>.
+</p>
+
+<p>
+ On success, the function stores an interface identifier into <em>ifid</em>, and returns nonzero.
+On failure, it returns 0, and sets errno.
+</p>
+
+<h4> <code> int skabus_rpc_interface_unregister (skabus_rpc_t *a, uint32_t ifid, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Unregisters the interface with id <em>ifid</em>. <em>ifid</em> may be
+reused in future interface registrations.
+</p>
+
+<p>
+ The application should ensure it is not currently handling queries to that interface
+before calling this function. All the pending queries (i.e. sent, but not yet read
+by the rclient) to that interface will fail will the ECONNRESET reason.
+</p>
+
+<p>
+ On success, the function returns nonzero. On failure, it returns 0, and sets errno.
+</p>
+
+<h3> Sending and cancelling a query </h3>
+
+<h4> <code> uint64_t skabus_rpc_send_withfds (skabus_rpc_t *a, char const *ifname, char const *s, size_t len, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *limit, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Sends a query to interface <em>ifname</em>. The query is made of <em>len</em> bytes of data
+pointed to by <em>s</em>, as well as <em>nfds</em> open file descriptors whose list is pointed
+to by <em>fds</em>.
+</p>
+
+<p>
+ If <em>nfds</em> is nonzero, the qclient must be authorized to send descriptors. That means
+the ruleset that matched the qclient at connection time must contain a nonempty
+<tt>env/SKABUS_RPC_QSENDFDS</tt> entry.
+</p>
+
+<p>
+ <em>bits</em> is a bitfield containing at least <em>nfds</em> bits. If the <em>n</em>th bit is 1,
+it means that <tt>fds[<em>n</em>]</tt> will be closed after being sent to skabus-rpcd. If it is 0,
+the fd will not be touched. As a <em>bits</em> value, you can use <tt>unixmessage_bits_closenone</tt>
+to close nothing, or <tt>unixmessage_bits_closeall</tt> to close all the descriptors in <em>fds</em>.
+</p>
+
+<p>
+ <em>limit</em> is an absolute date at which the query will fail with the ETIMEDOUT reason if
+the answer hasn't arrived by then. This deadline will be enforced by the server and also transmitted
+to the rclient for information.
+</p>
+
+<p>
+ Please note that <em>limit</em> refers to an actual deadline for the whole lifetime
+of the query, i.e. transmission to the rclient, handling by the rclient, and transmission of the
+reply to the qclient. This has nothing to do with the <em>deadline</em> argument, which is a
+deadline for the current <tt>skabus_rpc_send_withfds()</tt> function call. If <em>limit</em>
+is reached, it's normal operation - the query simply took too long to be handled. But if
+<em>deadline</em> (which should be way earlier than <em>limit</em>) is reached, it means the
+server got stuck somewhere in the initial function call, and it's not normal operation at
+all.
+</p>
+
+<p>
+ On success, the function returns a 64-bit value that is the serial number of the query.
+On failure, it returns 0, and sets errno.
+</p>
+
+<h4> <code> uint64_t skabus_rpc_send(skabus_rpc_t *a, char const *ifname, char const *s, size_t len, tain_t const *limit, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Sends a text-only query to <em>ifname</em>. It's a wrapper over <tt>skabus_rpc_send_withfds</tt>.
+</p>
+
+<h4> <code> uint64_t skabus_rpc_sendv_withfds (skabus_rpc_t *a, char const *ifname, struct iovec const *v, unsigned int vlen, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *limit, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Like <tt>skabus_rpc_send_withfds</tt>, except the text of the query is not
+given as a single array of bytes, but as several chunks of data defined by
+the <em>v</em> array of length <em>vlen</em>.
+</p>
+
+<h4> <code> uint64_t skabus_rpc_sendv(skabus_rpc_t *a, char const *ifname, struct iovec const *v, unsigned int vlen, tain_t const *limit, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Like <tt>skabus_rpc_send</tt>, except the text of the query is not
+given as a single array of bytes, but as several chunks of data defined by
+the <em>v</em> array of length <em>vlen</em>.
+</p>
+
+<h4> <code> uint64_t skabus_rpc_sendpm_withfds (skabus_rpc_t *a, char const *rid, char const *s, size_t len, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *limit, tain_t const *deadline, tain_t *stamp) <br />
+uint64_t skabus_rpc_sendpm (skabus_rpc_t *a, char const *rid, char const *s, size_t len, tain_t const *limit, tain_t const *deadline, tain_t *stamp) <br />
+uint64_t skabus_rpc_sendvpm_withfds (skabus_rpc_t *a, char const *rid, struct iovec const *v, unsigned int vlen, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *limit, tain_t const *deadline, tain_t *stamp) <br />
+uint64_t skabus_rpc_sendvpm (skabus_rpc_t *a, char const *rid, struct iovec const *v, unsigned int vlen, tain_t const *limit, tain_t const *deadline, tain_t *stamp) </code> </h4>
+<p>
+ These functions are the equivalent of the previous ones, but send a private query instead.
+<em>rid</em> is not an interface name, but a client identifier. If accepted, the
+query will be handled by the interface body that has been declared by the
+<em>rid</em> client when it registered itself.
+</p>
+
+<h4> <code> int skabus_rpc_cancel (skabus_rpc_t *a, uint64_t serial, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Cancels the query numbered <em>serial</em>. If the query is currently being handled
+by the rclient, the rclient will be notified (the appropriate <tt>cancelf</tt>
+callback will be called).
+</p>
+
+<p>
+ On success, the function returns nonzero. On failure, it returns 0, and sets errno.
+</p>
+
+<h3> Answering queries </h3>
+
+<p>
+ One of these functions must be called in every <tt>f</tt> callback defined
+in interface bodies, in order to send the reply to the qclient.
+</p>
+
+<h4> <code> int skabus_rpc_reply_withfds (skabus_rpc_t *a, uint64_t serial, char result, char const *s, size_t len, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Sends a reply to the query numbered <em>serial</em>. This reply is made of
+an overall value <em>result</em> (it is suggested to use 0 to mean "the query
+was handled properly, even if it returns a negative answer", and an errno
+code to mean "the query could not be handled properly by the rclient"), as
+well as a message containing <em>len</em> bytes pointed by <em>s</em> and
+potentially <em>nfds</em> open file descriptors pointed to by <em>fds</em>.
+</p>
+
+<p>
+ If <em>nfds</em> is nonzero, the rclient must be authorized to send descriptors. That means
+the ruleset that matched the rclient at connection time must contain a nonempty
+<tt>env/SKABUS_RPC_RSENDFDS</tt> entry.
+</p>
+
+<p>
+ <em>bits</em> is a bitfield containing at least <em>nfds</em> bits. If the <em>n</em>th bit is 1,
+it means that <tt>fds[<em>n</em>]</tt> will be closed after being sent to skabus-rpcd. If it is 0,
+the fd will not be touched. As a <em>bits</em> value, you can use <tt>unixmessage_bits_closenone</tt>
+to close nothing, or <tt>unixmessage_bits_closeall</tt> to close all the descriptors in <em>fds</em>.
+</p>
+
+<p>
+ The function returns nonzero if it could send the reply to skabus-rpcd. If it could not,
+it returns 0 and sets errno. Note that the function will still return nonzero if
+<em>serial</em> does not match a query that was sent to this rclient; in that case,
+skabus-rpcd will silently ignore the reply.
+</p>
+
+<h4> <code> int skabus_rpc_reply (skabus_rpc_t *a, uint64_t serial, char result, char const *s, size_t len, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Shortcut for <tt>skabus_rpc_reply_withfds</tt> when the reply
+does not contain any file descriptors.
+</p>
+
+<h4> <code> int skabus_rpc_replyv_withfds (skabus_rpc_t *a, uint64_t serial, char result, struct iovec const *v, unsigned int vlen, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Similar to <tt>skabus_rpc_reply_withfds</tt>, but the text of the reply
+is made of <em>vlen</em> chunks described in the <em>v</em> array.
+</p>
+
+<h4> <code> int skabus_rpc_replyv (skabus_rpc_t *a, uint64_t serial, char result, struct iovec const *s, unsigned int vlen, tain_t const *deadline, tain_t *stamp) </code> </h4>
+
+<p>
+ Shortcut for <tt>skabus_rpc_replyv_withfds</tt> when the reply
+does not contain any file descriptors.
+</p>
+
+<h3> Getting replies to queries </h3>
+
+<h4> int skabus_rpc_fd (skabus_rpc_t *a) </h4>
+
+<p>
+ Returns a file descriptor for the connection to skabus-rpcd. This file
+descriptor can be checked for reading in an asynchronous event loop
+with a <tt>poll</tt> or <tt>select</tt> call. (For easy timeout
+management, <a href="//skarnet.org/software/skalibs/libstddjb/iopause.html">iopause</a>
+is recommended.) When the descriptor is readable, do not read it,
+but call the following function instead.
+</p>
+
+<h4> <code> int skabus_rpc_update (skabus_rpc_t *a) </code> </h4>
+
+<p>
+ Updates the qclient's data structures with the latest information
+from skabus-rpcd. This function should be called when the connection
+descriptor becomes readable.
+</p>
+
+<p>
+ The function returns a negative number (and sets errno) if an error
+occurs, 0 if nothing happened, and a positive number if new answers
+have arrived.
+</p>
+
+<h4> <code> size_t skabus_rpc_qlist (skabus_rpc_t *a, uint64_t **list) </code> </h4>
+
+<p>
+ Returns the number of currently unaddressed answers. If that
+number is greater than 0, a pointer to an array containing the
+list of unaddressed answers is stored into <em>*list</em>. The
+elements of the array are the serial numbers for the queries
+whose answered have arrived.
+</p>
+
+<p>
+ The <em>*list</em> pointer is only valid until the next invocation
+of <tt>skabus_rpc_update()</tt>.
+</p>
+
+<h4> <code> int skabus_rpc_get (skabus_rpc_t *a, uint64_t serial, int *result, unixmessage_t *m) </code> </h4>
+
+<p>
+ Get the answer for the query numbered <em>serial</em>.
+ Returns a negative number (and sets errno) if an error occurred. errno is EINVAL if <em>serial</em>
+is an invalid query number. Returns 0 if no answer has arrived yet. Returns a
+positive number if the reply has arrived, in which case the overall result
+value is stored into <em>*result</em>, and the reply message is pointed by <em>m</em>.
+</p>
+
+<p>
+ <em>m</em> points to a <tt>unixmessage_t</tt> structure containing the
+following fields:
+</p>
+
+<ul>
+ <li> <tt>s</tt>: a <tt>char *</tt> containing the text of the message </li>
+ <li> <tt>len</tt>: a <tt>size_t</tt> containing the length of the <tt>s</tt> field </li>
+ <li> <tt>fds</tt>: a <tt>int *</tt> pointing to an array of file descriptors </li>
+ <li> <tt>nfds</tt>: an <tt>unsigned int</tt> containing the length of the array pointed to by the <tt>fds</tt> field </li>
+</ul>
+
+<p>
+ If the reply is unwanted, the qclient should call <tt>unixmessage_drop(m)</tt>
+to make sure all file descriptors contained in it, if any, are closed.
+</p>
+
+<h4> <code> int skabus_rpc_release (skabus_rpc_t *a, uint64_t serial) </code> </h4>
+
+<p>
+ Releases the resources occupied by the reply to the query numbered <em>serial</em>.
+Only call this function when the reply has been handled, or at least when the message
+text, and file descriptors if any, have been copied to another place.
+</p>
+
+<p>
+ The function returns 1 on success, and 0 (and sets errno) on failure.
+errno is EINVAL if <em>serial</em> is an invalid number, and EAGAIN if the query
+is in-flight. To cancel an in-flight query, use <tt>skabus_rpc_cancel</tt>
+instead.
+</p>
+
+<h4> <code> void skabus_rpc_qlist_ack (skabus_rpc_t *a, size_t n) </code> </h4>
+
+<p>
+ Acknowledges that <em>n</em> replies have been handled: removes <em>n</em>
+elements at the head of the queue that <tt>skabus_rpc_qlist</tt> returns.
+</p>
 
 </body>
 </html>

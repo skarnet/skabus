@@ -115,6 +115,5 @@ static int handler (unixmessage_t const *m, void *x)
 
 int skabus_rpc_update (skabus_rpc_t *a)
 {
-  genalloc_setlen(uint64_t, &a->qlist, 0) ;
   return skaclient_update(&a->connection, &handler, a) ;
 }

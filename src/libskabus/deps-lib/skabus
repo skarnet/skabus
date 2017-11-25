@@ -11,11 +11,15 @@ skabus_rpc_interface_unregister.o
 skabus_rpc_interface_unregister_async.o
 skabus_rpc_interface_zero.o
 skabus_rpc_qinfo_zero.o
+skabus_rpc_qlist.o
+skabus_rpc_qlist_ack.o
 skabus_rpc_r_notimpl.o
 skabus_rpc_rcancel_ignore.o
 skabus_rpc_release.o
 skabus_rpc_reply.o
 skabus_rpc_replyv.o
+skabus_rpc_reply_async.o
+skabus_rpc_replyv_async.o
 skabus_rpc_rinfo_pack.o
 skabus_rpc_rinfo_unpack.o
 skabus_rpc_rinfo_zero.o

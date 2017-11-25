@@ -69,14 +69,20 @@ extern skabus_rpc_interface_t const skabus_rpc_interface_zero ;
 extern skabus_rpc_r_func_t skabus_rpc_r_notimpl ;
 extern skabus_rpc_rcancel_func_t skabus_rpc_rcancel_ignore ;
 
-extern int skabus_rpc_reply_withfds (skabus_rpc_t *, uint64_t, char, char const *, size_t, int const *, unsigned int, unsigned char const *) ;
-#define skabus_rpc_reply(a, serial, result, s, len) skabus_rpc_reply_withfds(a, serial, result, s, len, 0, 0, unixmessage_bits_closenone)
-extern int skabus_rpc_replyv_withfds (skabus_rpc_t *, uint64_t, char, struct iovec const *, unsigned int, int const *, unsigned int, unsigned char const *) ;
-#define skabus_rpc_replyv(a, serial, result, v, vlen) skabus_rpc_replyv_withfds(a, serial, result, v, vlen, 0, 0, unixmessage_bits_closenone)
+extern int skabus_rpc_reply_withfds_async (skabus_rpc_t *, uint64_t, char, char const *, size_t, int const *, unsigned int, unsigned char const *) ;
+#define skabus_rpc_reply_async(a, serial, result, s, len) skabus_rpc_reply_withfds(a, serial, result, s, len, 0, 0, unixmessage_bits_closenone)
+extern int skabus_rpc_replyv_withfds_async (skabus_rpc_t *, uint64_t, char, struct iovec const *, unsigned int, int const *, unsigned int, unsigned char const *) ;
+#define skabus_rpc_replyv_async(a, serial, result, v, vlen) skabus_rpc_replyv_withfds(a, serial, result, v, vlen, 0, 0, unixmessage_bits_closenone)
 
-#define skabus_rpc_rfd(a) skaclient_afd(&(a)->connection)
-#define skabus_rpc_riswritable skaclient_aiswritable(&(a)->connection)
-#define skabus_rpc_rflush(a) skaclient_aflush(&(a)->connection)
+extern int skabus_rpc_reply_withfds (skabus_rpc_t *, uint64_t, char, char const *, size_t, int const *, unsigned int, unsigned char const *, tain_t const *, tain_t *) ;
+#define skabus_rpc_reply(a, serial, result, s, len, deadline, stamp) skabus_rpc_reply_withfds(a, serial, result, s, len, 0, 0, unixmessage_bits_closenone, deadline, stamp)
+extern int skabus_rpc_replyv_withfds (skabus_rpc_t *, uint64_t, char, struct iovec const *, unsigned int, int const *, unsigned int, unsigned char const *, tain_t const *, tain_t *) ;
+#define skabus_rpc_replyv(a, serial, result, v, vlen, deadline, stamp) skabus_rpc_replyv_withfds(a, serial, result, v, vlen, 0, 0, unixmessage_bits_closenone, deadline, stamp)
+
+#define skabus_rpc_reply_withfds_g(a, serial, result, s, len, fds, nfds, bits, deadline) skabus_rpc_reply_withfds(a, serial, result, s, len, fds, nfds, bits, (deadline), &STAMP)
+#define skabus_rpc_reply_g(a, serial, result, s, len, deadline) skabus_rpc_reply(a, serial, result, s, len, (deadline), &STAMP)
+#define skabus_rpc_replyv_withfds_g(a, serial, result, v, vlen, fds, nfds, bits, deadline) skabus_rpc_replyv_withfds(a, serial, result, v, vlen, fds, nfds, bits, (deadline), &STAMP)
+#define skabus_rpc_replyv_g(a, serial, result, v, vlen, deadline) skabus_rpc_replyv(a, serial, result, v, vlen, (deadline), &STAMP)
 
 
  /* Internal client interface storage */
@@ -153,9 +159,12 @@ extern void skabus_rpc_end (skabus_rpc_t *) ;
 
  /* Getting results */
 
+#define skabus_rpc_fd(a) skaclient_fd(&(a)->connection)
 extern int skabus_rpc_update (skabus_rpc_t *) ;
+extern size_t skabus_rpc_qlist (skabus_rpc_t *, uint64_t **) ;
 extern int skabus_rpc_get (skabus_rpc_t *, uint64_t, int *, unixmessage_t *) ;
 extern int skabus_rpc_release (skabus_rpc_t *, uint64_t) ;
+extern void skabus_rpc_qlist_ack(skabus_rpc_t *, size_t) ;
 
 
  /* Registering an interface */
@@ -191,7 +200,7 @@ extern int skabus_rpc_send_withfds_async (skabus_rpc_t *, char const *, char con
 #define skabus_rpc_send_async(a, ifname, s, len, limit, r) skabus_rpc_send_withfds_async(a, ifname, s, len, 0, 0, unixmessage_bits_closenone, limit, r)
 
 extern uint64_t skabus_rpc_send_withfds (skabus_rpc_t *, char const *, char const *, size_t, int const *, unsigned int, unsigned char const *, tain_t const *, tain_t const *, tain_t *) ;
-#define skabus_rpc_send_withfds_g(a, ifname, s, len, fds, nfds, bits, limit, deadline) skabus_rpc_send_withfds(a, ifname, s, len, fds, nfds, limit, (deadline), &STAMP)
+#define skabus_rpc_send_withfds_g(a, ifname, s, len, fds, nfds, bits, limit, deadline) skabus_rpc_send_withfds(a, ifname, s, len, fds, nfds, bits, limit, (deadline), &STAMP)
 #define skabus_rpc_send(a, ifname, s, len, limit, deadline, stamp) skabus_rpc_send_withfds(a, ifname, s, len, 0, 0, unixmessage_bits_closenone, limit, deadline, stamp)
 #define skabus_rpc_send_g(a, ifname, s, len, limit, deadline) skabus_rpc_send(a, ifname, s, len, limit, (deadline), &STAMP)
 
@@ -199,7 +208,7 @@ extern int skabus_rpc_sendv_withfds_async (skabus_rpc_t *, char const *, struct 
 #define skabus_rpc_sendv_async(a, ifname, v, vlen, limit, r) skabus_rpc_sendv_withfds_async(a, ifname, v, vlen, 0, 0, unixmessage_bits_closenone, limit, r)
 
 extern uint64_t skabus_rpc_sendv_withfds (skabus_rpc_t *, char const *, struct iovec const *, unsigned int, int const *, unsigned int, unsigned char const *, tain_t const *, tain_t const *, tain_t *) ;
-#define skabus_rpc_sendv_withfds_g(a, ifname, v, vlen, fds, nfds, bits, limit, deadline) skabus_rpc_sendv_withfds(a, ifname, v, vlen, fds, nfds, limit, (deadline), &STAMP)
+#define skabus_rpc_sendv_withfds_g(a, ifname, v, vlen, fds, nfds, bits, limit, deadline) skabus_rpc_sendv_withfds(a, ifname, v, vlen, fds, nfds, bits, limit, (deadline), &STAMP)
 #define skabus_rpc_sendv(a, ifname, v, vlen, limit, deadline, stamp) skabus_rpc_sendv_withfds(a, ifname, v, vlen, 0, 0, unixmessage_bits_closenone, limit, deadline, stamp)
 #define skabus_rpc_sendv_g(a, ifname, v, vlen, limit, deadline) skabus_rpc_sendv(a, ifname, v, vlen, limit, (deadline), &STAMP)
 
@@ -207,7 +216,7 @@ extern int skabus_rpc_sendpm_withfds_async (skabus_rpc_t *, char const *, char c
 #define skabus_rpc_sendpm_async(a, cname, s, len, limit, r) skabus_rpc_sendpm_withfds_async(a, cname, s, len, 0, 0, unixmessage_bits_closenone, limit, r)
 
 extern uint64_t skabus_rpc_sendpm_withfds (skabus_rpc_t *, char const *, char const *, size_t, int const *, unsigned int, unsigned char const *, tain_t const *, tain_t const *, tain_t *) ;
-#define skabus_rpc_sendpm_withfds_g(a, cname, s, len, fds, nfds, bits, limit, deadline) skabus_rpc_sendpm_withfds(a, cname, s, len, fds, nfds, limit, (deadline), &STAMP)
+#define skabus_rpc_sendpm_withfds_g(a, cname, s, len, fds, nfds, bits, limit, deadline) skabus_rpc_sendpm_withfds(a, cname, s, len, fds, nfds, bits, limit, (deadline), &STAMP)
 #define skabus_rpc_sendpm(a, cname, s, len, limit, deadline, stamp) skabus_rpc_sendpm_withfds(a, cname, s, len, 0, 0, unixmessage_bits_closenone, limit, deadline, stamp)
 #define skabus_rpc_sendpm_g(a, cname, s, len, limit, deadline) skabus_rpc_sendpm(a, cname, s, len, limit, (deadline), &STAMP)
 
@@ -215,7 +224,7 @@ extern int skabus_rpc_sendvpm_withfds_async (skabus_rpc_t *, char const *, struc
 #define skabus_rpc_sendvpm_async(a, cname, v, vlen, limit, r) skabus_rpc_sendvpm_withfds_async(a, cname, v, vlen, 0, 0, unixmessage_bits_closenone, limit, r)
 
 extern uint64_t skabus_rpc_sendvpm_withfds (skabus_rpc_t *, char const *, struct iovec const *, unsigned int, int const *, unsigned int, unsigned char const *, tain_t const *, tain_t const *, tain_t *) ;
-#define skabus_rpc_sendvpm_withfds_g(a, cname, v, vlen, fds, nfds, bits, limit, deadline) skabus_rpc_sendvpm_withfds(a, cname, v, vlen, fds, nfds, limit, (deadline), &STAMP)
+#define skabus_rpc_sendvpm_withfds_g(a, cname, v, vlen, fds, nfds, bits, limit, deadline) skabus_rpc_sendvpm_withfds(a, cname, v, vlen, fds, nfds, bits, limit, (deadline), &STAMP)
 #define skabus_rpc_sendvpm(a, cname, v, vlen, limit, deadline, stamp) skabus_rpc_sendvpm_withfds(a, cname, v, vlen, 0, 0, unixmessage_bits_closenone, limit, deadline, stamp)
 #define skabus_rpc_sendvpm_g(a, cname, v, vlen, limit, deadline) skabus_rpc_sendvpm(a, cname, v, vlen, limit, (deadline), &STAMP)
 

@@ -7,5 +7,5 @@ int skabus_rpc_r_notimpl (skabus_rpc_t *a, skabus_rpc_rinfo_t const *info, unixm
 {
   (void)m ;
   (void)data ;
-  return skabus_rpc_reply(a, info->serial, ENOSYS, "", 0) ;
+  return skabus_rpc_reply(a, info->serial, ENOSYS, "", 0, 0, 0) ;
 }
