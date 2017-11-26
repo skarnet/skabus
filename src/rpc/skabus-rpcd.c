@@ -448,12 +448,14 @@ int main (int argc, char const *const *argv, char const *const *envp)
   }
 
   {
-    GENSETB_TYPE(client_t, 1+maxconn) blob ;
+    genset clientinfo ;
+    client_t clientstorage[1+maxconn] ;
+    uint32_t clientfreelist[1+maxconn] ;
     iopause_fd x[2 + (maxconn << 1)] ;
-    GENSETB_init(client_t, &blob, 1+maxconn) ;
-    sentinel = gensetb_new(&blob) ;
-    blob.storage[sentinel].next = sentinel ;
-    clients = &blob.info ;
+    GENSET_init(&clientinfo, client_t, clientstorage, clientfreelist, 1+maxconn) ;
+    sentinel = genset_new(&clientinfo) ;
+    clientstorage[sentinel].next = sentinel ;
+    clients = &clientinfo ;
     x[0].fd = spfd ; x[0].events = IOPAUSE_READ ;
     x[1].fd = 0 ;
 
@@ -468,13 +470,13 @@ int main (int argc, char const *const *argv, char const *const *envp)
     {
       tain_t deadline ;
       int r = 1 ;
-      uint32_t i = blob.storage[sentinel].next, j = 2 ;
+      uint32_t i = clientstorage[sentinel].next, j = 2 ;
       query_get_mindeadline(&deadline) ;
       if (!cont && tain_less(&lameduckdeadline, &deadline)) deadline = lameduckdeadline ;
       if (queries_pending()) r = 0 ;
       
       x[1].events = (cont && (numconn < maxconn)) ? IOPAUSE_READ : 0 ;
-      for (; i != sentinel ; i = blob.storage[i].next)
+      for (; i != sentinel ; i = clientstorage[i].next)
         if (client_prepare_iopause(i, &deadline, x, &j, cont)) r = 0 ;
       if (!cont && r) break ;
 
@@ -494,8 +496,8 @@ int main (int argc, char const *const *argv, char const *const *envp)
           query_fail(i, ETIMEDOUT) ;
         }
         errno = ETIMEDOUT ;
-        for (i = blob.storage[sentinel].next, j = sentinel ; i != sentinel ; j = i, i = blob.storage[i].next)
-          if (!tain_future(&blob.storage[i].deadline)) removeclient(&i, j) ;
+        for (i = clientstorage[sentinel].next, j = sentinel ; i != sentinel ; j = i, i = clientstorage[i].next)
+          if (!tain_future(&clientstorage[i].deadline)) removeclient(&i, j) ;
         continue ;
       }
 
@@ -507,10 +509,10 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
      /* Event */
 
-      for (j = sentinel, i = blob.storage[sentinel].next ; i != sentinel ; j = i, i = blob.storage[i].next)
+      for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
         if (!client_flush(i, x)) removeclient(&i, j) ;
 
-      for (j = sentinel, i = blob.storage[sentinel].next ; i != sentinel ; j = i, i = blob.storage[i].next)
+      for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
         switch(client_read(i, x))
         {
           case 0 : errno = 0 ;
