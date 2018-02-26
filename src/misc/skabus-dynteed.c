@@ -123,7 +123,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
     unsigned int t = 0, T = 0 ;
     for (;;)
     {
-      int opt = subgetopt_r(argc, argv, "d:1c:i:x:t:", &l) ;
+      int opt = subgetopt_r(argc, argv, "d:1c:i:x:t:T:", &l) ;
       if (opt == -1) break ;
       switch (opt)
       {
