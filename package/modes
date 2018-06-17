@@ -3,3 +3,6 @@ skabus-dynteed		0755
 skabus-dyntee-client	0755
 skabus-rpc-daemon	0755
 skabus-rpcd		0755
+skabus-rpc-client	0755
+skabus-rpcc		0755
+skabus-rpccctl		0755

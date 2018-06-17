@@ -4,5 +4,5 @@ skabus_rpcd_query.o
 libskabus.a.xyzzy
 -ls6
 -lskarnet
-${TAINNOW_LIB}
 ${SOCKET_LIB}
+${TAINNOW_LIB}

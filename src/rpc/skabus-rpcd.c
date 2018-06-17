@@ -32,7 +32,7 @@
 #include <skabus/rpc.h>
 #include "skabus-rpcd.h"
 
-#define USAGE "skabus-rpcd [ -v verbosity ] [ -1 ] [ -d | -D ] [ -c maxconn ] [ -t timeout ] [ -T lameducktimeout ] [ -i rulesdir | -x rulesfile ] [ -S | -s ] [ -J | -j ]"
+#define USAGE "skabus-rpcd [ -v verbosity ] [ -1 ] [ -c maxconn ] [ -t timeout ] [ -T lameducktimeout ] [ -i rulesdir | -x rulesfile ] [ -S | -s ] [ -J | -j ]"
 #define dieusage() strerr_dieusage(100, USAGE) ;
 
 tain_t answertto = TAIN_INFINITE_RELATIVE ;
@@ -45,7 +45,6 @@ static unsigned int rulestype = 0 ;
 static char const *rules = 0 ;
 static int cdbfd = -1 ;
 static struct cdb cdbmap = CDB_ZERO ;
-static int flagidstrpub = 0, flaginterfacespub = 0 ;
 
 static inline void handle_signals (void)
 {
@@ -274,9 +273,9 @@ static int makere (regex_t *re, char const *s, char const *var)
   return 0 ;
 }
 
-static void defaultre (regex_t *re, int flag)
+static void defaultre (regex_t *re, unsigned int pubflag)
 {
-  char const *s = flag ? ".*" : ".^" ;
+  char const *s = pubflag ? ".*" : ".^" ;
   int r = regcomp(re, s, REG_EXTENDED | REG_NOSUB) ;
   if (r)
   {
@@ -286,44 +285,45 @@ static void defaultre (regex_t *re, int flag)
   }
 }
 
-static inline int parse_env (char const *const *envp, regex_t *idstr_re, regex_t *interfaces_re, uint32_t *flags)
+static inline int parse_env (char const *const *envp, regex_t *idstr_re, regex_t *interfaces_re, uint32_t *flags, unsigned int *donep)
 {
   uint32_t fl = 0 ;
-  int idstr_done = 0, interfaces_done = 0 ;
+  unsigned int done = 0 ;
   for (; *envp ; envp++)
   {
     if (str_start(*envp, "SKABUS_RPC_QSENDFDS=")) fl |= 1 ;
     if (str_start(*envp, "SKABUS_RPC_RSENDFDS=")) fl |= 2 ;
-    if (!idstr_done)
+    if (!(done & 1))
     {
-      idstr_done = makere(idstr_re, *envp, "SKABUS_RPC_ID_REGEX") ;
-      if (idstr_done < 0)
+      int r = makere(idstr_re, *envp, "SKABUS_RPC_ID_REGEX") ;
+      if (r < 0)
       {
-        if (interfaces_done) regfree(interfaces_re) ;
+        if (done & 2) regfree(interfaces_re) ;
         return 0 ;
       }
+      else if (r) done |= 1 ;
     }
-    if (!interfaces_done)
+    if (!(done & 2))
     {
-      interfaces_done = makere(interfaces_re, *envp, "SKABUS_RPC_INTERFACES_REGEX") ;
-      if (interfaces_done < 0)
+      int r = makere(interfaces_re, *envp, "SKABUS_RPC_INTERFACES_REGEX") ;
+      if (r < 0)
       {
-        if (idstr_done) regfree(idstr_re) ;
+        if (done & 1) regfree(idstr_re) ;
         return 0 ;
       }
+      else if (r) done |= 2 ;
     }
-    if (idstr_done && interfaces_done) return 1 ;
   }
-  if (!idstr_done) defaultre(idstr_re, flagidstrpub) ;
-  if (!interfaces_done) defaultre(interfaces_re, flaginterfacespub) ;
   *flags = fl ;
+  *donep = done ;
   return 1 ;
 }
 
-static inline int new_connection (int fd, uid_t *uid, gid_t *gid, regex_t *idstr_re, regex_t *interfaces_re, uint32_t *flags)
+static inline int new_connection (int fd, uid_t *uid, gid_t *gid, regex_t *idstr_re, regex_t *interfaces_re, uint32_t *flags, unsigned int pubflags)
 {
   s6_accessrules_params_t params = S6_ACCESSRULES_PARAMS_ZERO ;
   s6_accessrules_result_t result = S6_ACCESSRULES_ERROR ;
+  unsigned int done = 0 ;
 
   if (getpeereid(fd, uid, gid) < 0)
   {
@@ -347,17 +347,13 @@ static inline int new_connection (int fd, uid_t *uid, gid_t *gid, regex_t *idstr
        strerr_warnw1sys("error while checking rules") ;
     return 0 ;
   }
-  if (params.exec.s)
+  if (params.exec.len && verbosity)
   {
-    stralloc_free(&params.exec) ;
-    if (verbosity)
-    {
-      char fmtuid[UID_FMT] ;
-      char fmtgid[GID_FMT] ;
-      fmtuid[uid_fmt(fmtuid, *uid)] = 0 ;
-      fmtgid[gid_fmt(fmtgid, *gid)] = 0 ;
-      strerr_warnw4x("unused exec string in rules for uid ", fmtuid, " gid ", fmtgid) ;
-    }
+    char fmtuid[UID_FMT] ;
+    char fmtgid[GID_FMT] ;
+    fmtuid[uid_fmt(fmtuid, *uid)] = 0 ;
+    fmtgid[gid_fmt(fmtgid, *gid)] = 0 ;
+    strerr_warnw4x("unused exec string in rules for uid ", fmtuid, " gid ", fmtgid) ;
   }
   if (params.env.s)
   {
@@ -366,18 +362,20 @@ static inline int new_connection (int fd, uid_t *uid, gid_t *gid, regex_t *idstr
     if (!env_make(envp, n, params.env.s, params.env.len))
     {
       if (verbosity) strerr_warnwu1sys("env_make") ;
-      stralloc_free(&params.env) ;
+      s6_accessrules_params_free(&params) ;
       return 0 ;
     }
     envp[n] = 0 ;
-    if (!parse_env(envp, idstr_re, interfaces_re, flags))
+    if (!parse_env(envp, idstr_re, interfaces_re, flags, &done))
     {
       if (verbosity) strerr_warnwu1sys("parse_env") ;
       s6_accessrules_params_free(&params) ;
       return 0 ;
     }
-    s6_accessrules_params_free(&params) ;
   }
+  s6_accessrules_params_free(&params) ;
+  if (!(done & 1)) defaultre(idstr_re, pubflags & 1) ;
+  if (!(done & 2)) defaultre(interfaces_re, pubflags & 2) ;
   return 1 ;
 }
 
@@ -386,6 +384,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   int spfd ;
   int flag1 = 0 ;
   uint32_t maxconn = 64 ;
+  unsigned int pubflags = 0 ;
   PROG = "skabus-rpcd" ;
 
   {
@@ -398,10 +397,10 @@ int main (int argc, char const *const *argv, char const *const *envp)
       switch (opt)
       {
         case 'v' : if (!uint0_scan(l.arg, &verbosity)) dieusage() ; break ;
-        case 'S' : flagidstrpub = 0 ; break ;
-        case 's' : flagidstrpub = 1 ; break ;
-        case 'J' : flaginterfacespub = 0 ; break ;
-        case 'j' : flaginterfacespub = 1 ; break ;
+        case 'S' : pubflags &= ~1U ; break ;
+        case 's' : pubflags |= 1U ; break ;
+        case 'J' : pubflags &= ~2U ; break ;
+        case 'j' : pubflags |= 2U ; break ;
         case '1' : flag1 = 1 ; break ;
         case 'i' : rules = l.arg ; rulestype = 1 ; break ;
         case 'x' : rules = l.arg ; rulestype = 2 ; break ;
@@ -539,7 +538,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
         if (fd < 0)
           if (!error_isagain(errno)) strerr_diefu1sys(111, "accept") ;
           else continue ;
-        else if (!new_connection(fd, &uid, &gid, &idstr_re, &interfaces_re, &flags))
+        else if (!new_connection(fd, &uid, &gid, &idstr_re, &interfaces_re, &flags, pubflags))
           fd_close(fd) ;
         else client_add(&i, &idstr_re, &interfaces_re, uid, gid, fd, flags) ;
       }

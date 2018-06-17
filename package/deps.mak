@@ -50,8 +50,12 @@ src/libskabus/skabus_rpc_zero.o src/libskabus/skabus_rpc_zero.lo: src/libskabus/
 src/misc/skabus-dyntee-client.o src/misc/skabus-dyntee-client.lo: src/misc/skabus-dyntee-client.c
 src/misc/skabus-dyntee.o src/misc/skabus-dyntee.lo: src/misc/skabus-dyntee.c src/include/skabus/config.h
 src/misc/skabus-dynteed.o src/misc/skabus-dynteed.lo: src/misc/skabus-dynteed.c
+src/rpc/skabus-rpc-client.o src/rpc/skabus-rpc-client.lo: src/rpc/skabus-rpc-client.c src/rpc/skabus-rpcc.h src/include/skabus/config.h
 src/rpc/skabus-rpc-daemon.o src/rpc/skabus-rpc-daemon.lo: src/rpc/skabus-rpc-daemon.c src/include/skabus/config.h
+src/rpc/skabus-rpcc.o src/rpc/skabus-rpcc.lo: src/rpc/skabus-rpcc.c src/rpc/skabus-rpcc.h src/include/skabus/rpc.h
+src/rpc/skabus-rpccctl.o src/rpc/skabus-rpccctl.lo: src/rpc/skabus-rpccctl.c src/rpc/skabus-rpccctl.h
 src/rpc/skabus-rpcd.o src/rpc/skabus-rpcd.lo: src/rpc/skabus-rpcd.c src/rpc/skabus-rpcd.h src/include/skabus/rpc.h
+src/rpc/skabus_rpccctl.o src/rpc/skabus_rpccctl.lo: src/rpc/skabus_rpccctl.c src/rpc/skabus-rpccctl.h src/include/skabus/rpc.h
 src/rpc/skabus_rpcd_client.o src/rpc/skabus_rpcd_client.lo: src/rpc/skabus_rpcd_client.c src/rpc/skabus-rpcd.h src/include/skabus/rpc.h
 src/rpc/skabus_rpcd_interface.o src/rpc/skabus_rpcd_interface.lo: src/rpc/skabus_rpcd_interface.c src/rpc/skabus-rpcd.h src/include/skabus/rpc.h
 src/rpc/skabus_rpcd_query.o src/rpc/skabus_rpcd_query.lo: src/rpc/skabus_rpcd_query.c src/rpc/skabus-rpcd.h src/include/skabus/rpc.h
@@ -69,7 +73,13 @@ skabus-dyntee-client: EXTRA_LIBS := ${SOCKET_LIB}
 skabus-dyntee-client: src/misc/skabus-dyntee-client.o -lskarnet
 skabus-dynteed: EXTRA_LIBS := ${SOCKET_LIB}
 skabus-dynteed: src/misc/skabus-dynteed.o -ls6 -lskarnet
+skabus-rpc-client: EXTRA_LIBS :=
+skabus-rpc-client: src/rpc/skabus-rpc-client.o -lskarnet
 skabus-rpc-daemon: EXTRA_LIBS :=
 skabus-rpc-daemon: src/rpc/skabus-rpc-daemon.o -lskarnet
-skabus-rpcd: EXTRA_LIBS := ${TAINNOW_LIB} ${SOCKET_LIB}
+skabus-rpcc: EXTRA_LIBS := ${SOCKET_LIB} ${TAINNOW_LIB}
+skabus-rpcc: src/rpc/skabus-rpcc.o ${LIBSKABUS} -lskarnet
+skabus-rpccctl: EXTRA_LIBS := ${SOCKET_LIB} ${TAINNOW_LIB}
+skabus-rpccctl: src/rpc/skabus-rpccctl.o src/rpc/skabus_rpccctl.o -lskarnet
+skabus-rpcd: EXTRA_LIBS := ${SOCKET_LIB} ${TAINNOW_LIB}
 skabus-rpcd: src/rpc/skabus-rpcd.o src/rpc/skabus_rpcd_client.o src/rpc/skabus_rpcd_interface.o src/rpc/skabus_rpcd_query.o libskabus.a.xyzzy -ls6 -lskarnet

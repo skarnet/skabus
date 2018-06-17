@@ -18,6 +18,7 @@ int skabus_rpc_interface_register_async (skabus_rpc_t *a, char const *ifname, sk
   char pack[10] = "I" ;
   struct iovec v[3] = { { .iov_base = pack, .iov_len = 10 }, { .iov_base = (char *)ifname, .iov_len = ifnamelen + 1 }, { .iov_base = (char *)re, .iov_len = relen + 1 } } ;
   if (ifnamelen > SKABUS_RPC_INTERFACE_MAXLEN) return (errno = ENAMETOOLONG, 0) ;
+  if (relen > SKABUS_RPC_RE_MAXLEN) return (errno = ENAMETOOLONG, 0) ;
   if (!gensetdyn_new(&a->r, &result->ifid)) return 0 ;
   result->r = &a->r ;
   ifnode = GENSETDYN_P(skabus_rpc_ifnode_t, &a->r, result->ifid) ;

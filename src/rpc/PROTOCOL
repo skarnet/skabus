@@ -1,3 +1,4 @@
+ Protocol between a client - using skabus_rpc_*() - and skabus-rpcd.
 
  Registering (1st connection) (client -> server)
 
@@ -79,4 +80,3 @@ and contains an idstr instead of an ifname.
  iflen : 1
  ifname : iflen
  '\0' : 1
-

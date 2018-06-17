@@ -108,8 +108,8 @@ skabus-dynteed will accept connections from any client.
 <p>
  Rulesets can be converted between the <em>rulesdir</em> and
 <em>rulesfile</em> formats with the
-<a href="s6-accessrules-cdb-from-fs.html">s6-accessrules-cdb-from-fs</a> and
-<a href="s6-accessrules-fs-from-cdb.html">s6-accessrules-fs-from-cdb</a>
+<a href="//skarnet.org/software/s6/s6-accessrules-cdb-from-fs.html">s6-accessrules-cdb-from-fs</a> and
+<a href="//skarnet.org/software/s6/s6-accessrules-fs-from-cdb.html">s6-accessrules-fs-from-cdb</a>
 conversion tools.
 </p>
 
@@ -117,13 +117,13 @@ conversion tools.
 
 <p>
  The rules file, or rules directory, follows the
-<a href="libs6/accessrules.html">s6 accessrules format</a> for uid and
+<a href="//skarnet.org/software/s6/libs6/accessrules.html">s6 accessrules format</a> for uid and
 gid checking. For every connecting client, skabus-dynteed matches the uid
 and gid of the client against the provided ruleset, and determines whether
 the client is authorized or not to connect.
 The right to connect is given if an
 <tt>allow</tt> file is found in one of the subdirectories checked by
-<a href="libs6/accessrules.html#uidgid">s6_accessrules_keycheck_uidgid</a>.
+<a href="//skarnet.org/software/s6/libs6/accessrules.html#uidgid">s6_accessrules_keycheck_uidgid</a>.
 For instance, to allow everyone to connect, touch
 <tt><em>rulesdir</em>/uid/default/allow</tt>.
 </p>

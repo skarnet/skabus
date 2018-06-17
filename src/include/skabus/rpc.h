@@ -26,6 +26,7 @@
 #define SKABUS_RPC_BANNER2_LEN (sizeof SKABUS_RPC_BANNER2 - 1)
 #define SKABUS_RPC_IDSTR_SIZE 254
 #define SKABUS_RPC_INTERFACE_MAXLEN 255
+#define SKABUS_RPC_RE_MAXLEN 1023
 
 typedef struct skabus_rpc_s skabus_rpc_t, *skabus_rpc_t_ref ;
 
