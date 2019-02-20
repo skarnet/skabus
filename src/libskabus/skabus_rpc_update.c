@@ -3,7 +3,8 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
-#include <skalibs/error.h>
+
+#include <skalibs/posixishard.h>
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
 #include <skalibs/alloc.h>
@@ -13,6 +14,7 @@
 #include <skalibs/avltree.h>
 #include <skalibs/unixmessage.h>
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 
 typedef int localhandler_func_t (skabus_rpc_t *, unixmessage_t *) ;

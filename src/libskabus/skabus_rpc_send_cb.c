@@ -2,8 +2,9 @@
 
 #include <sys/uio.h>
 #include <errno.h>
+
+#include <skalibs/posixishard.h>
 #include <skalibs/uint64.h>
-#include <skalibs/error.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/avltree.h>
 #include <skalibs/unixmessage.h>

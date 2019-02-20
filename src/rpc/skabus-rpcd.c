@@ -9,6 +9,8 @@
 #include <regex.h>
 #include <errno.h>
 #include <signal.h>
+
+#include <skalibs/posixishard.h>
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
 #include <skalibs/types.h>
@@ -28,7 +30,9 @@
 #include <skalibs/webipc.h>
 #include <skalibs/genset.h>
 #include <skalibs/unixmessage.h>
+
 #include <s6/accessrules.h>
+
 #include <skabus/rpc.h>
 #include "skabus-rpcd.h"
 

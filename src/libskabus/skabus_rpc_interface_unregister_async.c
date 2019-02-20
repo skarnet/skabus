@@ -3,10 +3,12 @@
 #include <string.h>
 #include <sys/uio.h>
 #include <errno.h>
-#include <skalibs/error.h>
+
+#include <skalibs/posixishard.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/unixmessage.h>
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 
 static int skabus_rpc_interface_unregister_cb (unixmessage_t const *m, void *p)

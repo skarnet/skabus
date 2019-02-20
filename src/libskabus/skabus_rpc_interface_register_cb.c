@@ -1,9 +1,11 @@
  /* ISC license. */
 
 #include <errno.h>
-#include <skalibs/error.h>
+
+#include <skalibs/posixishard.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/unixmessage.h>
+
 #include <skabus/rpc.h>
 #include "skabus-rpc-internal.h"
 

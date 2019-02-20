@@ -9,6 +9,8 @@
 #include <regex.h>
 #include <errno.h>
 #include <signal.h>
+
+#include <skalibs/posixishard.h>
 #include <skalibs/posixplz.h>
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
@@ -32,6 +34,7 @@
 #include <skalibs/genqdyn.h>
 #include <skalibs/skamisc.h>
 #include <execline/config.h>
+
 #include <skabus/rpc.h>
 #include "skabus-rpcc.h"
 

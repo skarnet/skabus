@@ -6,12 +6,14 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <limits.h>
+
+#include <skalibs/posixishard.h>
 #include <skalibs/uint32.h>
-#include <skalibs/error.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/djbunix.h>
 #include <skalibs/webipc.h>
 #include <skalibs/textmessage.h>
+
 #include <skabus/rpc.h>
 #include "skabus-rpccctl.h"
 
