@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <errno.h>
 #include <regex.h>
+
+#include <skalibs/posixplz.h>
 #include <skalibs/strerr2.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/gensetdyn.h>
@@ -83,7 +85,7 @@ int interface_add (uint32_t *d, char const *name, size_t namelen, uint32_t clien
   if (!gensetdyn_new(&interfaces, &yy)) return 0 ;
   {
     interface_t *y = INTERFACE(yy) ;
-    int r = regcomp(&y->re, re, REG_EXTENDED | REG_NOSUB) ;
+    int r = skalibs_regcomp(&y->re, re, REG_EXTENDED | REG_NOSUB) ;
     if (r)
     {
       e = r == REG_ESPACE ? ENOMEM : EINVAL ;

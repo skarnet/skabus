@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <signal.h>
 
+#include <skalibs/posixplz.h>
 #include <skalibs/posixishard.h>
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
@@ -261,7 +262,7 @@ static int makere (regex_t *re, char const *s, char const *var)
   size_t varlen = strlen(var) ;
   if (str_start(s, var) && (s[varlen] == '='))
   {
-    int r = regcomp(re, s + varlen + 1, REG_EXTENDED | REG_NOSUB) ;
+    int r = skalibs_regcomp(re, s + varlen + 1, REG_EXTENDED | REG_NOSUB) ;
     if (r)
     {
       if (verbosity)
@@ -279,8 +280,8 @@ static int makere (regex_t *re, char const *s, char const *var)
 
 static void defaultre (regex_t *re, unsigned int pubflag)
 {
-  char const *s = pubflag ? ".*" : ".^" ;
-  int r = regcomp(re, s, REG_EXTENDED | REG_NOSUB) ;
+  char const *s = pubflag ? "" : ".^" ;
+  int r = skalibs_regcomp(re, s, REG_EXTENDED | REG_NOSUB) ;
   if (r)
   {
     char buf[256] ;
