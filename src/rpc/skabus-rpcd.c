@@ -468,6 +468,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
       fd_write(1, "\n", 1) ;
       fd_close(1) ;
     }
+    tain_now_set_stopwatch() ;
     tain_now_g() ;
 
     for (;;)
