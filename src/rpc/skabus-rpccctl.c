@@ -117,8 +117,7 @@ int main (int argc, char const *const *argv)
 
   if (!argc) dieusage() ;
 
-  tain_now_set_stopwatch() ;
-  tain_now_g() ;
+  tain_now_set_stopwatch_g() ;
   tain_add_g(&deadline, &deadline) ;
 
   what = parse_command(argv[0]) ;
