@@ -5,4 +5,4 @@ libskabus.a.xyzzy
 -ls6
 -lskarnet
 ${SOCKET_LIB}
-${TAINNOW_LIB}
+${SYSCLOCK_LIB}

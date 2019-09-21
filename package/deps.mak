@@ -77,9 +77,9 @@ skabus-rpc-client: EXTRA_LIBS :=
 skabus-rpc-client: src/rpc/skabus-rpc-client.o -lskarnet
 skabus-rpc-daemon: EXTRA_LIBS :=
 skabus-rpc-daemon: src/rpc/skabus-rpc-daemon.o -lskarnet
-skabus-rpcc: EXTRA_LIBS := ${SOCKET_LIB} ${TAINNOW_LIB}
+skabus-rpcc: EXTRA_LIBS := ${SOCKET_LIB} ${SYSCLOCK_LIB}
 skabus-rpcc: src/rpc/skabus-rpcc.o ${LIBSKABUS} -lskarnet
-skabus-rpccctl: EXTRA_LIBS := ${SOCKET_LIB} ${TAINNOW_LIB}
+skabus-rpccctl: EXTRA_LIBS := ${SOCKET_LIB} ${SYSCLOCK_LIB}
 skabus-rpccctl: src/rpc/skabus-rpccctl.o src/rpc/skabus_rpccctl.o -lskarnet
-skabus-rpcd: EXTRA_LIBS := ${SOCKET_LIB} ${TAINNOW_LIB}
+skabus-rpcd: EXTRA_LIBS := ${SOCKET_LIB} ${SYSCLOCK_LIB}
 skabus-rpcd: src/rpc/skabus-rpcd.o src/rpc/skabus_rpcd_client.o src/rpc/skabus_rpcd_interface.o src/rpc/skabus_rpcd_query.o libskabus.a.xyzzy -ls6 -lskarnet
