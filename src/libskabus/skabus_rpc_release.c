@@ -2,10 +2,12 @@
 
 #include <stdint.h>
 #include <errno.h>
+
 #include <skalibs/uint64.h>
 #include <skalibs/alloc.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/avltree.h>
+
 #include <skabus/rpc.h>
 
 int skabus_rpc_release (skabus_rpc_t *a, uint64_t serial)

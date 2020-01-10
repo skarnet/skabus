@@ -1,11 +1,13 @@
 /* ISC license. */
 
 #include <stdint.h>
+
 #include <skalibs/uint64.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/avltree.h>
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 
 void skabus_rpc_end (skabus_rpc_t *a)

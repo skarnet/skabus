@@ -1,6 +1,7 @@
 /* ISC license. */
 
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 
 int skabus_rpc_start (skabus_rpc_t *a, char const *path, tain_t const *deadline, tain_t *stamp)

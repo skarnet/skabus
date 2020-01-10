@@ -1,6 +1,7 @@
 /* ISC license. */
 
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 
 int skabus_rpc_start_async (skabus_rpc_t *a, char const *path, skabus_rpc_start_result_t *data)

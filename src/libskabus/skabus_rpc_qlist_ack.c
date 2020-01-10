@@ -1,8 +1,10 @@
 /* ISC license. */
 
 #include <string.h>
+
 #include <skalibs/uint64.h>
 #include <skalibs/genalloc.h>
+
 #include <skabus/rpc.h>
 
 void skabus_rpc_qlist_ack (skabus_rpc_t *a, size_t n)

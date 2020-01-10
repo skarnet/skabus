@@ -1,10 +1,12 @@
 /* ISC license. */
 
 #include <string.h>
+
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
 #include <skalibs/types.h>
 #include <skalibs/tai.h>
+
 #include <skabus/rpc.h>
 
 void skabus_rpc_rinfo_unpack (char const *s, skabus_rpc_rinfo_t *ri)

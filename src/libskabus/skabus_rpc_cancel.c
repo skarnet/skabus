@@ -1,8 +1,10 @@
 /* ISC license. */
 
 #include <errno.h>
+
 #include <skalibs/tai.h>
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 
 int skabus_rpc_cancel (skabus_rpc_t *a, uint64_t serial, tain_t const *deadline, tain_t *stamp)

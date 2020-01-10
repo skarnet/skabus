@@ -1,7 +1,9 @@
 /* ISC license. */
 
 #include <errno.h>
+
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 #include "skabus-rpc-internal.h"
 

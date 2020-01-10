@@ -9,6 +9,7 @@
 #include <skalibs/avltree.h>
 #include <skalibs/unixmessage.h>
 #include <skalibs/skaclient.h>
+
 #include <skabus/rpc.h>
 #include "skabus-rpc-internal.h"
 
