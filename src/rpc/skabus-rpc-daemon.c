@@ -21,7 +21,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   uid_t uid = 0 ;
   gid_t gid = 0 ;
   gid_t gids[NGROUPS_MAX] ;
-  size_t gidn = (unsigned int)-1 ;
+  size_t gidn = (size_t)-1 ;
   unsigned int maxconn = 0 ;
   unsigned int backlog = (unsigned int)-1 ;
   int flagpublic = 0 ;
@@ -35,7 +35,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
     subgetopt_t l = SUBGETOPT_ZERO ;
     for (;;)
     {
-      register int opt = subgetopt_r(argc, argv, "Dd1USsJjv:c:b:u:g:G:t:T:i:x:", &l) ;
+      int opt = subgetopt_r(argc, argv, "Dd1USsJjv:c:b:u:g:G:t:T:i:x:", &l) ;
       if (opt == -1) break ;
       switch (opt)
       {

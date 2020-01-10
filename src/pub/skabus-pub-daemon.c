@@ -24,7 +24,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   uid_t uid = 0 ;
   gid_t gid = 0 ;
   gid_t gids[NGROUPS_MAX] ;
-  size_t gidn = (unsigned int)-1 ;
+  size_t gidn = (size_t)-1 ;
   unsigned int maxconn = 0 ;
   unsigned int backlog = (unsigned int)-1 ;
   int flagpublic = 0 ;
@@ -81,7 +81,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
     }
     newargv[m++] = "--" ;
     newargv[m++] = *argv++ ;
-    if (flagU || uid || gid || gidn != (unsigned int)-1)
+    if (flagU || uid || gid || gidn != (size_t)-1)
     {
       newargv[m++] = S6_EXTBINPREFIX "s6-applyuidgid" ;
       if (flagU) newargv[m++] = "-Uz" ;
