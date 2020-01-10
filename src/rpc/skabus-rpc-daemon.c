@@ -87,14 +87,14 @@ int main (int argc, char const *const *argv, char const *const *envp)
       {
         newargv[m++] = "-u" ;
         newargv[m++] = fmt + pos ;
-        pos += uint_fmt(fmt + pos, uid) ;
+        pos += uid_fmt(fmt + pos, uid) ;
         fmt[pos++] = 0 ;
       }
       if (gid)
       {
         newargv[m++] = "-g" ;
         newargv[m++] = fmt + pos ;
-        pos += uint_fmt(fmt + pos, gid) ;
+        pos += gid_fmt(fmt + pos, gid) ;
         fmt[pos++] = 0 ;
       }
       if (gidn != (size_t)-1)
