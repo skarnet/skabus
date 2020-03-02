@@ -175,11 +175,11 @@ struct client_s
   char idstr[SKABUS_PUB_IDSTR_SIZE + 1] ;
 } ;
 
-static genset *clients ;
+static genset clients = GENSET_ZERO ;
 static unsigned int sentinel ;
 static avltreen *clientmap ;
-#define CLIENT(i) genset_p(client_t, clients, (i))
-#define numconn (genset_n(clients) - 1)
+#define CLIENT(i) genset_p(client_t, &clients, (i))
+#define numconn (genset_n(&clients) - 1)
 
 static inline void client_free (client_t *c)
 {
@@ -222,7 +222,7 @@ static inline void client_delete (uint32_t cc, uint32_t prev)
   CLIENT(prev)->next = c->next ;
   if (c->idstr[0]) avltreen_delete(clientmap, c->idstr) ;
   client_free(c) ;
-  genset_delete(clients, cc) ;
+  genset_delete(&clients, cc) ;
 }
 
 static void remove (uint32_t *i, uint32_t j)
@@ -263,7 +263,7 @@ static inline int client_prepare_iopause (uint32_t i, tain_t *deadline, iopause_
 
 static inline void client_add (int fd, regex_t const *idstr_re, unsigned int flags)
 {
-  uint32_t i = genset_new(clients) ;
+  uint32_t i = genset_new(&clients) ;
   client_t *c = CLIENT(i) ;
   unixconnection_init(&c->sync, fd, fd) ;
   unixmessage_sender_init_withclosecb(&c->asyncout, -(int)flags - 1, &fdcount_closecb, 0) ;
@@ -866,26 +866,26 @@ int main (int argc, char const *const *argv, char const *const *envp)
   }
 
   {  /* I present to you: the stack */
-    GENSETB_TYPE(client_t, 1+maxconn) blob ;
+    client_t clientstorage[1+maxconn] ;
+    uint32_t clientfreelist[1+maxconn] ;
     iopause_fd x[2 + (maxconn << 1)] ;
-    AVLTREEN_DECLARE_AND_INIT(blobmap, 1+maxconn, &idstr_dtok, &idstr_cmp, &blob) ;
+    AVLTREEN_DECLARE_AND_INIT(blobmap, 1+maxconn, &idstr_dtok, &idstr_cmp, 0) ;
 
-    GENSETB_init(client_t, &blob, 1+maxconn) ;
-    clients = &blob.info ;
-    sentinel = gensetb_new(&blob) ;
-    blob.storage[sentinel].next = sentinel ;
-    blob.storage[sentinel].idstr[0] = 0 ;
+    GENSET_init(&clients, client_t, clientstorage, clientfreelist, 1+maxconn) ;
+    sentinel = genset_new(&clients) ;
+    clientstorage[sentinel].next = sentinel ;
+    clientstorage[sentinel].idstr[0] = 0 ;
     {
-      int r = regcomp(&blob.storage[sentinel].subscribe_re, announce_re, REG_EXTENDED | REG_NOSUB) ;
+      int r = regcomp(&clientstorage[sentinel].subscribe_re, announce_re, REG_EXTENDED | REG_NOSUB) ;
       if (r)
       {
         char buf[256] ;
-        regerror(r, &blob.storage[sentinel].subscribe_re, buf, 256) ;
+        regerror(r, &clientstorage[sentinel].subscribe_re, buf, 256) ;
         strerr_dief4x(100, "invalid control regex: ", announce_re, ": ", buf) ;
       }
     }
-    if (regcomp(&blob.storage[sentinel].write_re, "^$", REG_NOSUB)) strerr_diefu1x(100, "regcomp ^$") ;
-    avltree_init(&blob.storage[sentinel].subscribers, 3, 3, 8, &uint32_dtok, &ptr_cmp, 0) ;
+    if (regcomp(&clientstorage[sentinel].write_re, "^$", REG_NOSUB)) strerr_diefu1x(100, "regcomp ^$") ;
+    avltree_init(&clientstorage[sentinel].subscribers, 3, 3, 8, &uint32_dtok, &ptr_cmp, 0) ;
     avltreen_insert(&blobmap, sentinel) ;
     clientmap = &blobmap ;
     x[0].fd = spfd ; x[0].events = IOPAUSE_READ ;
@@ -901,12 +901,12 @@ int main (int argc, char const *const *argv, char const *const *envp)
     for (;;)
     {
       tain_t deadline ;
-      uint32_t i = blob.storage[sentinel].next, j = 2 ;
+      uint32_t i = clientstorage[sentinel].next, j = 2 ;
       int r = 1 ;
       if (cont) tain_add_g(&deadline, &tain_infinite_relative) ;
       else deadline = lameduckdeadline ;
       x[1].events = (cont && (numconn < maxconn)) ? IOPAUSE_READ : 0 ;
-      for (; i != sentinel ; i = blob.storage[i].next)
+      for (; i != sentinel ; i = clientstorage[i].next)
         if (client_prepare_iopause(i, &deadline, x, &j)) r = 0 ;
       if (!cont && r) break ;
 
@@ -915,8 +915,8 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
       if (!r)
       {
-        for (j = sentinel, i = blob.storage[sentinel].next ; i != sentinel ; j = i, i = blob.storage[i].next)
-          if (!tain_future(&blob.storage[i].deadline))
+        for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
+          if (!tain_future(&clientstorage[i].deadline))
           {
             char what[2] = "-" ;
             what[1] = ETIMEDOUT ;
@@ -928,10 +928,10 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
       if (x[0].revents & IOPAUSE_READ) handle_signals() ;
 
-      for (j = sentinel, i = blob.storage[sentinel].next ; i != sentinel ; j = i, i = blob.storage[i].next)
+      for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
         if (!client_flush(i, x)) remove(&i, j) ;
 
-      for (j = sentinel, i = blob.storage[sentinel].next ; i != sentinel ; j = i, i = blob.storage[i].next)
+      for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
         switch (client_read(i, x))
         {
           case 0 : errno = 0 ;
