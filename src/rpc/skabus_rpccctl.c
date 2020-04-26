@@ -62,6 +62,7 @@ int skabus_rpcc_interface_register (skabus_rpcc_t *a, char const *ifname, char c
     uint32_pack_big(buf + 5, relen) ;
     if (!textmessage_timed_commandv(&a->out, v, 5, deadline, stamp)) goto err ;
   }
+  free(ifprogfn) ;
   return 1 ;
 
  terr:

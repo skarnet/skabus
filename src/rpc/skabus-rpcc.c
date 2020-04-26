@@ -33,6 +33,7 @@
 #include <skalibs/gensetdyn.h>
 #include <skalibs/genqdyn.h>
 #include <skalibs/skamisc.h>
+
 #include <execline/config.h>
 
 #include <skabus/rpc.h>
@@ -144,7 +145,7 @@ static int interface_add (char const *ifname, char const *ifprog, char const *re
   int fd[2] ;
   tain_t deadline ;
   skabus_rpc_interface_t ifbody = { .f = &rclient_function, .cancelf = &rclient_cancel_function, .aux = y }
-  char const *argv[4] = { EXECLINE_EXTBINPREFIX "execlineb", "-c", ifprog, 0 } ; 
+  char const *argv[4] = { EXECLINE_EXTBINPREFIX "execlineb", "-Pc", ifprog, 0 } ; 
   pid_t pid = child_spawn2(argv[0], argv, (char const *const *)environ, fd) ;
   if (!pid) return 0 ;
   if (!gensetdyn_new(&interfaces, &yy)) goto err ;
