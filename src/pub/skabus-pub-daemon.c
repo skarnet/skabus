@@ -6,7 +6,7 @@
 #include <skalibs/types.h>
 #include <skalibs/sgetopt.h>
 #include <skalibs/strerr2.h>
-#include <skalibs/djbunix.h>
+#include <skalibs/exec.h>
 
 #include <s6/config.h>
 
@@ -15,7 +15,7 @@
 #define USAGE "skabus-pub-daemon [ -v verbosity ] [ -d | -D ] [ -1 ] [ -c maxconn ] [ -b backlog ] [ -G gid,gid,... ] [ -g gid ] [ -u uid ] [ -U ] [ -t timeout ] [ -T lameducktimeout ] [ -i rulesdir | -x rulesfile ] [ -S | -s ] [ -k announcere ] path msgfsdir"
 #define dieusage() strerr_dieusage(100, USAGE)
 
-int main (int argc, char const *const *argv, char const *const *envp)
+int main (int argc, char const *const *argv)
 {
   unsigned int verbosity = 1 ;
   int flag1 = 0 ;
@@ -157,6 +157,6 @@ int main (int argc, char const *const *argv, char const *const *envp)
     newargv[m++] = "--" ;
     newargv[m++] = *argv++ ;
     newargv[m++] = 0 ;
-    xpathexec_run(newargv[0], newargv, envp) ;
+    xexec(newargv) ;
   }
 }

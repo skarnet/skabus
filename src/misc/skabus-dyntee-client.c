@@ -1,17 +1,17 @@
 /* ISC license. */
 
-#include <skalibs/nonposix.h>
-#include <sys/socket.h>
 #include <skalibs/sgetopt.h>
 #include <skalibs/strerr2.h>
 #include <skalibs/djbunix.h>
 #include <skalibs/webipc.h>
+#include <skalibs/exec.h>
 
 #define USAGE "skabus-dyntee-client path prog..."
 #define dieusage() strerr_dieusage(100, USAGE)
 
-int main (int argc, char const *const *argv, char const *const *envp)
+int main (int argc, char const *const *argv)
 {
+  int fd ;
   PROG = "skabus-dyntee-client" ;
   {
     subgetopt_t l = SUBGETOPT_ZERO ;
@@ -28,12 +28,10 @@ int main (int argc, char const *const *argv, char const *const *envp)
     if (argc < 2) dieusage() ;
   }
 
-  {
-    int fd = ipc_stream_b() ;
-    if (fd < 0) strerr_diefu1sys(111, "create socket") ;
-    if (!ipc_connect(fd, argv[0])) strerr_diefu2sys(111, "connect to ", argv[0]) ;
-    if (shutdown(fd, SHUT_WR) < 0) strerr_diefu1sys(111, "shutdown socket for writing") ;
-    if (fd_move(0, fd) < 0) strerr_diefu1sys(111, "move socket fd to stdin") ;
-  }
-  xpathexec_run(argv[1], argv+1, envp) ;
+  fd = ipc_stream_b() ;
+  if (fd < 0) strerr_diefu1sys(111, "create socket") ;
+  if (!ipc_connect(fd, argv[0])) strerr_diefu2sys(111, "connect to ", argv[0]) ;
+  fd_shutdown(fd, 1) ;
+  if (fd_move(0, fd) < 0) strerr_diefu1sys(111, "move socket fd to stdin") ;
+  xexec(argv+1) ;
 }

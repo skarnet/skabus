@@ -39,7 +39,7 @@
 
 #include <skabus/pub.h>
 
-#define USAGE "skabus-pubd [ -v verbosity ] [ -1 ] [ -c maxconn ] [ -t timeout ] [ -T lameducktimeout ] [ -i rulesdir | -x rulesfile ] [ -S | -s ] [ -k controlre ] msgfsdir"
+#define USAGE "skabus-pubd [ -v verbosity ] [ -1 ] [ -c maxconn ] [ -t timeout ] [ -T lameducktimeout ] [ -i rulesdir | -x rulesfile ] [ -S | -s ] [ -k controlre ] [ -m maxfds ] msgfsdir"
 #define dieusage() strerr_dieusage(100, USAGE) ;
 #define dienomem() strerr_diefu1sys(111, "stralloc_catb") ;
 #define die() strerr_dief1sys(101, "unexpected error") ;
@@ -52,6 +52,9 @@ static uint64_t serial = 1 ;
 static tain_t answertto = TAIN_INFINITE_RELATIVE ;
 static tain_t lameduckdeadline = TAIN_INFINITE_RELATIVE ;
 static int flagidstrpub = 0 ;
+static unsigned int maxfds = 1000 ;
+static uint32_t *fdcount ;
+static int maxed = 0 ;
 
 static unsigned int rulestype = 0 ;
 static char const *rules = 0 ;
@@ -97,6 +100,18 @@ static void handle_signals (void)
   }
 }
 
+static void fdcount_closecb (int fd, void *p)
+{
+  if (!--fdcount[fd])
+  {
+    fd_close(fd) ;
+    maxed = 0 ;
+  }
+}
+
+
+ /* client */
+
 static void *uint32_dtok (uint32_t d, void *x)
 {
   (void)x ;
@@ -108,56 +123,6 @@ static int ptr_cmp (void const *a, void const *b, void *x)
   (void)x ;
   return a < b ? -1 : a > b ;
 }
-
-
- /* fd reference counter */
-
-typedef struct fdcount_s fdcount_t, *fdcount_t_ref ;
-struct fdcount_s
-{
-  int fd ;
-  uint32_t n ;
-} ;
-
-static void *fdcount_dtok (uint32_t d, void *x)
-{
-  return &GENSETDYN_P(fdcount_t, (gensetdyn *)x, d)->fd ;
-}
-
-static int fd_cmp (void const *a, void const *b, void *x)
-{
-  int fda = *(int *)a ;
-  int fdb = *(int *)b ;
-  (void)x ;
-  return fda < fdb ? -1 : fda > fdb ;
-}
-
-static gensetdyn fdcountblob = GENSETDYN_INIT(fdcount_t, 3, 3, 8) ;
-static avltree fdcountmap = AVLTREE_INIT(3, 3, 8, &fdcount_dtok, &fd_cmp, &fdcountblob) ;
-#define FDCOUNT(i) GENSETDYN_P(fdcount_t, &fdcountblob, (i))
-
-static inline fdcount_t *fdcount_search (int fd)
-{
-  uint32_t d ;
-  fdcount_t *p ;
-  if (avltree_search(&fdcountmap, &fd, &d)) return FDCOUNT(d) ;
-  if (!gensetdyn_new(&fdcountblob, &d)) dienomem() ;
-  p = FDCOUNT(d) ;
-  p->fd = fd ;
-  p->n = 0 ;
-  if (!avltree_insert(&fdcountmap, d)) dienomem() ;
-  return p ;
-}
-
-static void fdcount_closecb (int fd, void *p)
-{
-  uint32_t d ;
-  avltree_search(&fdcountmap, &fd, &d) ;
-  if (!--FDCOUNT(d)->n) fd_close(fd) ;
-}
-
-
- /* client */
 
 typedef struct client_s client_t, *client_t_ref ;
 struct client_s
@@ -244,10 +209,10 @@ static inline int client_prepare_iopause (uint32_t i, tain_t *deadline, iopause_
 {
   client_t *c = CLIENT(i) ;
   if (tain_less(&c->deadline, deadline)) *deadline = c->deadline ;
-  if (!unixmessage_sender_isempty(&c->sync.out) || !unixmessage_receiver_isempty(&c->sync.in) || (cont && !unixmessage_receiver_isfull(&c->sync.in)))
+  x[*j].events = (maxed || unixmessage_receiver_isfull(&c->sync.in) || (unixmessage_receiver_isempty(&c->sync.in) && !cont) ? 0 : IOPAUSE_READ) | (unixmessage_sender_isempty(&c->sync.out) ? 0 : IOPAUSE_WRITE) ;
+  if (x[*j].events)
   {
     x[*j].fd = unixmessage_sender_fd(&c->sync.out) ;
-    x[*j].events = (!unixmessage_receiver_isempty(&c->sync.in) || (cont && !unixmessage_receiver_isfull(&c->sync.in)) ? IOPAUSE_READ : 0) | (!unixmessage_sender_isempty(&c->sync.out) ? IOPAUSE_WRITE : 0) ;
     c->xindexsync = (*j)++ ;
   }
   else c->xindexsync = 0 ;
@@ -280,8 +245,7 @@ static int enqueue_message (uint32_t dd, unixmessage_t const *m)
   client_t *d = CLIENT(dd) ;
   if (!unixmessage_put_and_close(&d->asyncout, m, unixmessage_bits_closeall)) return 0 ;
   client_setdeadline(d) ;
-  for (unsigned int i = 0 ; i < m->nfds ; i++)
-    fdcount_search(m->fds[i])->n++ ;
+  for (unsigned int i = 0 ; i < m->nfds ; i++) fdcount[m->fds[i]]++ ;
   return 1 ;
 }
 
@@ -800,7 +764,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
     unsigned int t = 0, T = 0 ;
     for (;;)
     {
-      int opt = subgetopt_r(argc, argv, "v:Ss1c:k:i:x:t:T:", &l) ;
+      int opt = subgetopt_r(argc, argv, "v:Ss1c:k:i:x:t:T:m:", &l) ;
       if (opt == -1) break ;
       switch (opt)
       {
@@ -814,6 +778,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
         case 't' : if (!uint0_scan(l.arg, &t)) dieusage() ; break ;
         case 'T' : if (!uint0_scan(l.arg, &T)) dieusage() ; break ;
         case 'c' : if (!uint0_scan(l.arg, &maxconn)) dieusage() ; break ;
+        case 'm' : if (!uint0_scan(l.arg, &maxfds)) dieusage() ; break ;
         default : dieusage() ;
       }
     }
@@ -824,6 +789,8 @@ int main (int argc, char const *const *argv, char const *const *envp)
   if (!argc) dieusage() ;
   if (maxconn > SKABUS_PUB_MAX) maxconn = SKABUS_PUB_MAX ;
   if (!maxconn) maxconn = 1 ;
+  if (maxfds > SKABUS_PUB_MAXFDS) maxfds = SKABUS_PUB_MAXFDS ;
+  if (maxfds < 10) maxfds = 10 ;
   {
     struct stat st ;
     if (fstat(0, &st) < 0) strerr_diefu1sys(111, "fstat stdin") ;
@@ -868,6 +835,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   {  /* I present to you: the stack */
     client_t clientstorage[1+maxconn] ;
     uint32_t clientfreelist[1+maxconn] ;
+    uint32_t fdcountblob[6 + maxfds + maxconn] ;
     iopause_fd x[2 + (maxconn << 1)] ;
     AVLTREEN_DECLARE_AND_INIT(blobmap, 1+maxconn, &idstr_dtok, &idstr_cmp, 0) ;
 
@@ -890,6 +858,8 @@ int main (int argc, char const *const *argv, char const *const *envp)
     clientmap = &blobmap ;
     x[0].fd = spfd ; x[0].events = IOPAUSE_READ ;
     x[1].fd = 0 ;
+    for (unsigned int i = 0 ; i < sizeof(fdcountblob) / sizeof(uint32_t) ; i++) fdcountblob[i] = 0 ;
+    fdcount = fdcountblob ;
       
     if (flag1)
     {
@@ -931,21 +901,22 @@ int main (int argc, char const *const *argv, char const *const *envp)
       for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
         if (!client_flush(i, x)) remove(&i, j) ;
 
-      for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
-        switch (client_read(i, x))
-        {
-          case 0 : errno = 0 ;
-          case -1 :
-          case -2 :
+      if (!maxed)
+        for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
+          switch (client_read(i, x))
           {
-            char what[2] = "-" ;
-            what[1] = errno ;
-            if (!announce(what, 2, CLIENT(i)->idstr)) dienomem() ;
+            case 0 : errno = 0 ;
+            case -1 :
+            case -2 :
+            {
+              char what[2] = "-" ;
+              what[1] = errno ;
+              if (!announce(what, 2, CLIENT(i)->idstr)) dienomem() ;
+            }
+            remove(&i, j) ;
+            case 1 : break ;
+            default : errno = EILSEQ ; die() ;
           }
-          remove(&i, j) ;
-          case 1 : break ;
-          default : errno = EILSEQ ; die() ;
-        }
 
       if (x[1].revents & IOPAUSE_READ)
       {

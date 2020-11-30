@@ -18,6 +18,7 @@
 /* Misc constants */
 
 #define SKABUS_PUB_MAX 4000
+#define SKABUS_PUB_MAXFDS 4000
 #define SKABUS_PUB_BANNER1 "skabus_pub v1.0 (b)\n"
 #define SKABUS_PUB_BANNER1_LEN (sizeof SKABUS_PUB_BANNER1 - 1)
 #define SKABUS_PUB_BANNER2 "skabus_pub v1.0 (a)\n"

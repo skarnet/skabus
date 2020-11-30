@@ -3,15 +3,17 @@
 #include <skalibs/types.h>
 #include <skalibs/sgetopt.h>
 #include <skalibs/strerr2.h>
-#include <skalibs/djbunix.h>
+#include <skalibs/exec.h>
+
 #include <s6/config.h>
+
 #include <skabus/config.h>
 #include "skabus-rpcc.h"
 
 #define USAGE "skabus-rpc-client [ -v verbosity ] [ -d | -D ] [ -1 ] [ -c maxconn ] [ -b backlog ] [ -t timeout ] [ -T lameducktimeout ] [ -C pmprog:sep:flags ] [ -y ifname:ifprog:sep:flags ... ] rpccpath rpcdpath clientname"
 #define dieusage() strerr_dieusage(100, USAGE)
 
-int main (int argc, char const *const *argv, char const *const *envp)
+int main (int argc, char const *const *argv)
 {
   unsigned int verbosity = 1 ;
   int flag1 = 0 ;
@@ -115,6 +117,6 @@ int main (int argc, char const *const *argv, char const *const *envp)
     newargv[m++] = *argv++ ;
     newargv[m++] = *argv++ ;
     newargv[m++] = 0 ;
-    xpathexec_run(newargv[0], newargv, envp) ;
+    xexec(newargv) ;
   }
 }
