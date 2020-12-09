@@ -11,7 +11,7 @@
 #include <skalibs/uint32.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/djbunix.h>
-#include <skalibs/webipc.h>
+#include <skalibs/socket.h>
 #include <skalibs/textmessage.h>
 
 #include <skabus/rpc.h>

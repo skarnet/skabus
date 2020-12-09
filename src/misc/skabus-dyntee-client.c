@@ -3,7 +3,7 @@
 #include <skalibs/sgetopt.h>
 #include <skalibs/strerr2.h>
 #include <skalibs/djbunix.h>
-#include <skalibs/webipc.h>
+#include <skalibs/socket.h>
 #include <skalibs/exec.h>
 
 #define USAGE "skabus-dyntee-client path prog..."

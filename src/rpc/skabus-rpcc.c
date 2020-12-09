@@ -29,7 +29,7 @@
 #include <skalibs/tai.h>
 #include <skalibs/iopause.h>
 #include <skalibs/env.h>
-#include <skalibs/webipc.h>
+#include <skalibs/socket.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/genqdyn.h>
 #include <skalibs/skamisc.h>

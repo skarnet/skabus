@@ -27,7 +27,7 @@
 #include <skalibs/iopause.h>
 #include <skalibs/selfpipe.h>
 #include <skalibs/cdb.h>
-#include <skalibs/webipc.h>
+#include <skalibs/socket.h>
 #include <skalibs/genset.h>
 #include <skalibs/avltree.h>
 #include <skalibs/avltreen.h>

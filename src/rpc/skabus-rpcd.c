@@ -28,7 +28,7 @@
 #include <skalibs/iopause.h>
 #include <skalibs/env.h>
 #include <skalibs/getpeereid.h>
-#include <skalibs/webipc.h>
+#include <skalibs/socket.h>
 #include <skalibs/genset.h>
 #include <skalibs/unixmessage.h>
 
