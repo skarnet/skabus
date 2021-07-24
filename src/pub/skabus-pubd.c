@@ -58,8 +58,7 @@ static int maxed = 0 ;
 
 static unsigned int rulestype = 0 ;
 static char const *rules = 0 ;
-static int cdbfd = -1 ;
-static struct cdb cdbmap = CDB_ZERO ;
+static cdb cdbmap = CDB_ZERO ;
 
 static char const *msgfsdir ;
 
@@ -80,19 +79,10 @@ static void handle_signals (void)
     }
     case SIGHUP :
     {
-      int fd ;
-      struct cdb c = CDB_ZERO ;
+      cdb c = CDB_ZERO ;
       if (rulestype != 2) break ;
-      fd = open_readb(rules) ;
-      if (fd < 0) break ;
-      if (cdb_init(&c, fd) < 0)
-      {
-        fd_close(fd) ;
-        break ;
-      }
+      if (!cdb_init(&c, rules)) break ;
       cdb_free(&cdbmap) ;
-      fd_close(cdbfd) ;
-      cdbfd = fd ;
       cdbmap = c ;
     }
     break ;
@@ -826,9 +816,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
   if (rulestype == 2)
   {
-    cdbfd = open_readb(rules) ;
-    if (cdbfd < 0) strerr_diefu3sys(111, "open ", rules, " for reading") ;
-    if (cdb_init(&cdbmap, cdbfd) < 0)
+    if (!cdb_init(&cdbmap, rules))
       strerr_diefu2sys(111, "cdb_init ", rules) ;
   }
 
