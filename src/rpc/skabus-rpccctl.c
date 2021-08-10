@@ -13,7 +13,7 @@
 #define USAGE "skabus-rpccctl [ -t timeout ] help|interface|interface-remove|query args..."
 #define dieusage() strerr_dieusage(100, USAGE)
 
-static tain_t deadline ;
+static tain deadline ;
 static skabus_rpcc_t a = SKABUS_RPCC_ZERO ;
 
 static void add_interface (char const *rpccpath, char const *ifname, char const *ifprog, char const *re)
@@ -98,7 +98,7 @@ int main (int argc, char const *const *argv)
   PROG = "skabus-rpccctl" ;
   {
     unsigned int t = 0 ;
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     for (;;)
     {
       int opt = subgetopt_r(argc, argv, "t:T:", &l) ;

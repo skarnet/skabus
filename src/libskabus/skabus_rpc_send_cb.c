@@ -13,14 +13,14 @@
 #include <skabus/rpc.h>
 #include "skabus-rpc-internal.h"
 
-static int autocancel_cb (unixmessage_t const *m, void *p)
+static int autocancel_cb (unixmessage const *m, void *p)
 {
   (void)m ;
   (void)p ;
   return 1 ;
 }
 
-int skabus_rpc_send_cb (unixmessage_t const *m, void *p)
+int skabus_rpc_send_cb (unixmessage const *m, void *p)
 {
   skabus_rpc_send_result_t *r = p ;
   skabus_rpc_qinfo_t *info = GENSETDYN_P(skabus_rpc_qinfo_t, &r->a->q, r->i) ;

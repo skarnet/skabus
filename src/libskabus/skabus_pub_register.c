@@ -6,7 +6,7 @@
 
 #include <skabus/pub.h>
 
-int skabus_pub_register (skabus_pub_t *a, char const *id, char const *sre, char const *wre, tain_t const *deadline, tain_t *stamp)
+int skabus_pub_register (skabus_pub_t *a, char const *id, char const *sre, char const *wre, tain const *deadline, tain *stamp)
 {
   unsigned char r ;
   if (!skabus_pub_register_async(a, id, sre, wre, &r)) return 0 ;

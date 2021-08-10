@@ -17,7 +17,7 @@
 #include <skabus/rpc.h>
 #include "skabus-rpccctl.h"
 
-int skabus_rpcc_start (skabus_rpcc_t *a, char const *path, tain_t const *deadline, tain_t *stamp)
+int skabus_rpcc_start (skabus_rpcc_t *a, char const *path, tain const *deadline, tain *stamp)
 {
   int fd = ipc_stream_nb() ;
   if (fd < 0) return 0 ;
@@ -38,7 +38,7 @@ void skabus_rpcc_end (skabus_rpcc_t *a)
   textmessage_receiver_free(&a->in) ;
 }
 
-int skabus_rpcc_interface_register (skabus_rpcc_t *a, char const *ifname, char const *ifprog, char const *re, tain_t const *deadline, tain_t *stamp)
+int skabus_rpcc_interface_register (skabus_rpcc_t *a, char const *ifname, char const *ifprog, char const *re, tain const *deadline, tain *stamp)
 {
   size_t ifnamelen, ifproglen, relen ;
   char *ifprogfn = realpath(ifprog, 0) ;
@@ -72,7 +72,7 @@ int skabus_rpcc_interface_register (skabus_rpcc_t *a, char const *ifname, char c
   return 0 ;
 }
 
-int skabus_rpcc_interface_unregister (skabus_rpcc_t *a, char const *ifname, tain_t const *deadline, tain_t *stamp)
+int skabus_rpcc_interface_unregister (skabus_rpcc_t *a, char const *ifname, tain const *deadline, tain *stamp)
 {
   size_t ifnamelen = strlen(ifname) ;
   if (ifnamelen > SKABUS_RPC_INTERFACE_MAXLEN) return (errno = ENAMETOOLONG, 0) ;
@@ -89,7 +89,7 @@ int skabus_rpcc_interface_unregister (skabus_rpcc_t *a, char const *ifname, tain
   return 1 ;
 }
 
-int skabus_rpcc_query (skabus_rpcc_t *a, stralloc *reply, char const *ifname, char const *query, uint32_t timeout, tain_t const *deadline, tain_t *stamp)
+int skabus_rpcc_query (skabus_rpcc_t *a, stralloc *reply, char const *ifname, char const *query, uint32_t timeout, tain const *deadline, tain *stamp)
 {
   size_t ifnamelen = strlen(ifname) ;
   size_t querylen = strlen(query) ;
@@ -118,7 +118,7 @@ int skabus_rpcc_query (skabus_rpcc_t *a, stralloc *reply, char const *ifname, ch
   return 1 ;
 }
 
-int skabus_rpcc_quit (skabus_rpcc_t *a, tain_t const *deadline, tain_t *stamp)
+int skabus_rpcc_quit (skabus_rpcc_t *a, tain const *deadline, tain *stamp)
 {
   return textmessage_timed_command(&a->out, ".", 1, deadline, stamp) ; 
 }

@@ -20,7 +20,7 @@ int skabus_pub_sendpm_withfds_async (skabus_pub_t *a, char const *idstr, char co
     { .iov_base = (char *)idstr, .iov_len = idlen+1 },
     { .iov_base = (char *)s, .iov_len = len }
   } ;
-  unixmessage_v_t m = { .v = v, .vlen = 3, .fds = (int *)fds, .nfds = nfds } ;
+  unixmessagev m = { .v = v, .vlen = 3, .fds = (int *)fds, .nfds = nfds } ;
   if (idlen > SKABUS_PUB_IDSTR_SIZE) return (errno = ERANGE, 0) ;
   tmp[1] = (unsigned char)idlen ;
   return skaclient_putmsgv_and_close(&a->connection, &m, bits, &skabus_pub_send_cb, result) ;

@@ -7,6 +7,6 @@
 
 #define SKABUS_HEAD_MAX 64
 
-extern unixmessage_handler_func_t skabus_pub_send_cb ;
+extern unixmessage_handler_func skabus_pub_send_cb ;
 
 #endif

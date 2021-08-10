@@ -4,7 +4,7 @@
 
 #include <skabus/pub.h>
 
-int skabus_pub_start (skabus_pub_t *a, char const *path, tain_t const *deadline, tain_t *stamp)
+int skabus_pub_start (skabus_pub_t *a, char const *path, tain const *deadline, tain *stamp)
 {
   return skaclient_start_b(
     &a->connection,

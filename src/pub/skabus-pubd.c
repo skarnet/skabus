@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <regex.h>
 
-#include <skalibs/posixishard.h>
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
 #include <skalibs/types.h>
@@ -35,6 +34,8 @@
 #include <skalibs/unixconnection.h>
 #include <skalibs/skaclient.h>
 
+#include <skalibs/posixishard.h>
+
 #include <s6/accessrules.h>
 
 #include <skabus/pub.h>
@@ -49,8 +50,8 @@
 static unsigned int verbosity = 1 ;
 static int cont = 1 ;
 static uint64_t serial = 1 ;
-static tain_t answertto = TAIN_INFINITE_RELATIVE ;
-static tain_t lameduckdeadline = TAIN_INFINITE_RELATIVE ;
+static tain answertto = TAIN_INFINITE_RELATIVE ;
+static tain lameduckdeadline = TAIN_INFINITE_RELATIVE ;
 static int flagidstrpub = 0 ;
 static unsigned int maxfds = 1000 ;
 static uint32_t *fdcount ;
@@ -120,13 +121,13 @@ struct client_s
   uint32_t next ;
   uint32_t xindexsync ;
   uint32_t xindexasync ;
-  tain_t deadline ;
+  tain deadline ;
   regex_t idstr_re ;
   regex_t subscribe_re ;
   regex_t write_re ;
   avltree subscribers ;
-  unixmessage_sender_t asyncout ;
-  unixconnection_t sync ;
+  unixmessage_sender asyncout ;
+  unixconnection sync ;
   char idstr[SKABUS_PUB_IDSTR_SIZE + 1] ;
 } ;
 
@@ -188,14 +189,14 @@ static void remove (uint32_t *i, uint32_t j)
 
 static void client_setdeadline (client_t *c)
 {
-  tain_t blah ;
+  tain blah ;
   tain_half(&blah, &tain_infinite_relative) ;
   tain_add_g(&blah, &blah) ;
   if (tain_less(&blah, &c->deadline))
     tain_add_g(&c->deadline, &answertto) ;
 }
 
-static inline int client_prepare_iopause (uint32_t i, tain_t *deadline, iopause_fd *x, uint32_t *j)
+static inline int client_prepare_iopause (uint32_t i, tain *deadline, iopause_fd *x, uint32_t *j)
 {
   client_t *c = CLIENT(i) ;
   if (tain_less(&c->deadline, deadline)) *deadline = c->deadline ;
@@ -230,7 +231,7 @@ static inline void client_add (int fd, regex_t const *idstr_re, unsigned int fla
   CLIENT(sentinel)->next = i ;
 }
 
-static int enqueue_message (uint32_t dd, unixmessage_t const *m)
+static int enqueue_message (uint32_t dd, unixmessage const *m)
 {
   client_t *d = CLIENT(dd) ;
   if (!unixmessage_put_and_close(&d->asyncout, m, unixmessage_bits_closeall)) return 0 ;
@@ -250,7 +251,7 @@ static int unsendmessage_iter (uint32_t dd, unsigned int h, void *data)
 static int sendmessage_iter (uint32_t dd, unsigned int h, void *data)
 {
   (void)h ;
-  return enqueue_message(dd, (unixmessage_t *)data) ;
+  return enqueue_message(dd, (unixmessage *)data) ;
 }
 
 static int store_text (char const *s, size_t len)
@@ -290,7 +291,7 @@ static int announce (char const *what, size_t whatlen, char const *idstr)
   size_t idlen = strlen(idstr) ;
   int fd ;
   char s[MSGINFO_PACK(idlen)] ;
-  unixmessage_t m = { .s = s, .len = MSGINFO_PACK(idlen), .fds = &fd, .nfds = 1 } ;
+  unixmessage m = { .s = s, .len = MSGINFO_PACK(idlen), .fds = &fd, .nfds = 1 } ;
   if (!*idstr) return 1 ;
   fill_msginfo(s, idstr, idlen, 0) ;
   fd = store_text(what, whatlen) ;
@@ -339,13 +340,13 @@ static inline int client_flush (uint32_t i, iopause_fd const *x)
 
 static int answer (client_t *c, char e)
 {
-  unixmessage_t m = { .s = &e, .len = 1, .fds = 0, .nfds = 0 } ;
+  unixmessage m = { .s = &e, .len = 1, .fds = 0, .nfds = 0 } ;
   if (!unixmessage_put(&c->sync.out, &m)) return 0 ;
   client_setdeadline(c) ;
   return 1 ;
 }
 
-static int do_register (uint32_t cc, unixmessage_t const *m)
+static int do_register (uint32_t cc, unixmessage const *m)
 {
   uint32_t srelen, wrelen, dummy ;
   client_t *c = CLIENT(cc) ;
@@ -384,7 +385,7 @@ static int do_register (uint32_t cc, unixmessage_t const *m)
   return answer(c, 0) ;
 }
 
-static int do_list (uint32_t cc, unixmessage_t const *m)
+static int do_list (uint32_t cc, unixmessage const *m)
 {
   client_t *c = CLIENT(cc) ;
   uint32_t dd = CLIENT(sentinel)->next ;
@@ -394,7 +395,7 @@ static int do_list (uint32_t cc, unixmessage_t const *m)
     char pack[9] = "" ;
     char lens[n] ;
     struct iovec v[1+(n<<1)] ;
-    unixmessage_v_t mreply = { .v = v, .vlen = 1+(n<<1), .fds = 0, .nfds = 0 } ;
+    unixmessagev mreply = { .v = v, .vlen = 1+(n<<1), .fds = 0, .nfds = 0 } ;
     unsigned int registered = 0 ;
     v[0].iov_base = pack ; v[0].iov_len = 9 ;
     for (unsigned int i = 0 ; i < n ; i++)
@@ -420,7 +421,7 @@ static int do_list (uint32_t cc, unixmessage_t const *m)
   return 1 ;
 }
 
-static int do_unsubscribe (uint32_t cc, unixmessage_t const *m)
+static int do_unsubscribe (uint32_t cc, unixmessage const *m)
 {
   uint32_t dd ;
   char const *s = m->s ;
@@ -435,7 +436,7 @@ static int do_unsubscribe (uint32_t cc, unixmessage_t const *m)
   return answer(c, 0) ;
 }
 
-static int do_subscribe (uint32_t cc, unixmessage_t const *m)
+static int do_subscribe (uint32_t cc, unixmessage const *m)
 {
   client_t *c = CLIENT(cc) ;
   char const *s = m->s ;
@@ -456,7 +457,7 @@ static int do_subscribe (uint32_t cc, unixmessage_t const *m)
   return answer(c, 0) ;
 }
 
-static int do_sendpm (uint32_t cc, unixmessage_t const *m)
+static int do_sendpm (uint32_t cc, unixmessage const *m)
 {
   client_t *c = CLIENT(cc) ;
   char const *s = m->s ;
@@ -499,7 +500,7 @@ static int do_sendpm (uint32_t cc, unixmessage_t const *m)
     size_t cidlen = strlen(c->idstr) ;
     char pack[1 + MSGINFO_PACK(cidlen)] ;
     int fds[1 + m->nfds] ;
-    unixmessage_t mtosend = { .s = pack + 1, .len = MSGINFO_PACK(cidlen), .fds = fds, .nfds = 1 + m->nfds } ;
+    unixmessage mtosend = { .s = pack + 1, .len = MSGINFO_PACK(cidlen), .fds = fds, .nfds = 1 + m->nfds } ;
     fds[0] = store_text(s, len) ;
     if (fds[0] < 0)
     {
@@ -523,7 +524,7 @@ static int do_sendpm (uint32_t cc, unixmessage_t const *m)
   }
 }
 
-static int do_send (uint32_t cc, unixmessage_t const *m)
+static int do_send (uint32_t cc, unixmessage const *m)
 {
   client_t *c = CLIENT(cc) ;
   size_t cidlen = strlen(c->idstr) ;
@@ -535,7 +536,7 @@ static int do_send (uint32_t cc, unixmessage_t const *m)
   {
     char pack[1 + MSGINFO_PACK(cidlen)] ;
     int fds[1 + m->nfds] ;
-    unixmessage_t mtosend = { .s = pack + 1, .len = MSGINFO_PACK(cidlen), .fds = fds, .nfds = 1 + m->nfds } ;
+    unixmessage mtosend = { .s = pack + 1, .len = MSGINFO_PACK(cidlen), .fds = fds, .nfds = 1 + m->nfds } ;
     fds[0] = store_text(m->s, m->len) ;
     if (fds[0] < 0)
     {
@@ -558,19 +559,19 @@ static int do_send (uint32_t cc, unixmessage_t const *m)
   }
 }
 
-static int do_error (uint32_t cc, unixmessage_t const *m)
+static int do_error (uint32_t cc, unixmessage const *m)
 {
   (void)cc ;
   (void)m ;
   return (errno = EPROTO, 0) ;
 }
 
-typedef int parsefunc_t (uint32_t, unixmessage_t const *) ;
-typedef parsefunc_t *parsefunc_t_ref ;
+typedef int parse_func (uint32_t, unixmessage const *) ;
+typedef parse_func *parse_func_ref ;
 
-static inline int parse_protocol (unixmessage_t const *m, void *p)
+static inline int parse_protocol (unixmessage const *m, void *p)
 {
-  static parsefunc_t_ref const f[7] =
+  static parse_func_ref const f[7] =
   {
     &do_send,
     &do_sendpm,
@@ -580,7 +581,7 @@ static inline int parse_protocol (unixmessage_t const *m, void *p)
     &do_register,
     &do_error
   } ;
-  unixmessage_t mcopy = { .s = m->s + 1, .len = m->len - 1, .fds = m->fds, .nfds = m->nfds } ;
+  unixmessage mcopy = { .s = m->s + 1, .len = m->len - 1, .fds = m->fds, .nfds = m->nfds } ;
   if (!m->len)
   {
     unixmessage_drop(m) ;
@@ -601,7 +602,7 @@ static inline int client_read (uint32_t cc, iopause_fd const *x)
   {
     if (unixmessage_sender_fd(&c->asyncout) < 0)
     {
-      unixmessage_t m ;
+      unixmessage m ;
       int r = unixmessage_receive(&c->sync.in, &m) ;
       if (r < 0) return -1 ;
       if (r)
@@ -750,7 +751,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   PROG = "skabus-pubd" ;
 
   {
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     unsigned int t = 0, T = 0 ;
     for (;;)
     {
@@ -805,13 +806,13 @@ int main (int argc, char const *const *argv, char const *const *envp)
   msgfsdir = argv[0] ;
   spfd = selfpipe_init() ;
   if (spfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
-  if (sig_ignore(SIGPIPE) < 0) strerr_diefu1sys(111, "ignore SIGPIPE") ;
+  if (!sig_ignore(SIGPIPE)) strerr_diefu1sys(111, "ignore SIGPIPE") ;
   {
     sigset_t set ;
     sigemptyset(&set) ;
     sigaddset(&set, SIGTERM) ;
     sigaddset(&set, SIGHUP) ;
-    if (selfpipe_trapset(&set) < 0) strerr_diefu1sys(111, "trap signals") ;
+    if (!selfpipe_trapset(&set)) strerr_diefu1sys(111, "trap signals") ;
   }
 
   if (rulestype == 2)
@@ -858,7 +859,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
     for (;;)
     {
-      tain_t deadline ;
+      tain deadline ;
       uint32_t i = clientstorage[sentinel].next, j = 2 ;
       int r = 1 ;
       if (cont) tain_add_g(&deadline, &tain_infinite_relative) ;

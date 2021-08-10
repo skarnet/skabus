@@ -9,7 +9,7 @@
 #include <skabus/rpc.h>
 #include "skabus-rpc-internal.h"
 
-int skabus_rpc_interface_register_cb (unixmessage_t const *m, void *p)
+int skabus_rpc_interface_register_cb (unixmessage const *m, void *p)
 {
   skabus_rpc_interface_result_t *r = p ;
   if (m->len != 1 || m->nfds) return (errno = EPROTO, 0) ;

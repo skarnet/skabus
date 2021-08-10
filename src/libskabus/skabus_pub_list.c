@@ -6,7 +6,7 @@
 
 #include <skabus/pub.h>
 
-int skabus_pub_list (skabus_pub_t *a, stralloc *sa, diuint32 *n, tain_t const *deadline, tain_t *stamp)
+int skabus_pub_list (skabus_pub_t *a, stralloc *sa, diuint32 *n, tain const *deadline, tain *stamp)
 {
   skabus_pub_list_result_t r ;
   if (!skabus_pub_list_async(a, sa, &r)) return 0 ;

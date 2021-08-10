@@ -10,7 +10,7 @@ int skabus_rpc_replyv_withfds_async (skabus_rpc_t *a, uint64_t serial, char resu
 {
   char pack[10] = "R" ;
   struct iovec vv[vlen + 1] ;
-  unixmessage_v_t m = { .v = vv, .vlen = vlen+1, .fds = (int *)fds, .nfds = nfds } ;
+  unixmessagev m = { .v = vv, .vlen = vlen+1, .fds = (int *)fds, .nfds = nfds } ;
   vv[0].iov_base = pack ; vv[0].iov_len = 10 ;
   for (unsigned int i = 0 ; i < vlen ; i++) vv[1+i] = v[i] ;
   uint64_pack_big(pack+1, serial) ;

@@ -12,12 +12,12 @@
 #include <skabus/rpc.h>
 #include "skabus-rpc-internal.h"
 
-int skabus_rpc_sendq_withfds_async (skabus_rpc_t *a, char const *prefix, size_t plen, char const *ifname, char const *s, size_t len, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *limit, skabus_rpc_send_result_t *r)
+int skabus_rpc_sendq_withfds_async (skabus_rpc_t *a, char const *prefix, size_t plen, char const *ifname, char const *s, size_t len, int const *fds, unsigned int nfds, unsigned char const *bits, tain const *limit, skabus_rpc_send_result_t *r)
 {
   size_t iflen = strlen(ifname) ;
   char pack[2 + TAIN_PACK] = "Q" ;
   struct iovec v[4] = { { .iov_base = pack, .iov_len = 2 + TAIN_PACK }, { .iov_base = (char *)prefix, .iov_len = plen }, { .iov_base = (char *)ifname, .iov_len = iflen + 1 }, { .iov_base = (char *)s, .iov_len = len } } ;
-  unixmessage_v_t m = { .v = v, .vlen = 4, .fds = (int *)fds, .nfds = nfds } ;
+  unixmessagev m = { .v = v, .vlen = 4, .fds = (int *)fds, .nfds = nfds } ;
   iflen += plen ;
   if (iflen > SKABUS_RPC_INTERFACE_MAXLEN) return (errno = ENAMETOOLONG, 0) ;
   if (!gensetdyn_new(&a->q, &r->i)) return 0 ;

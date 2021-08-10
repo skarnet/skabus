@@ -35,7 +35,7 @@
 #define SKABUS_DYNTEE_MAX 1000
 
 static int cont = 1 ;
-static tain_t lameduckdeadline ;
+static tain lameduckdeadline ;
 
 static unsigned int rulestype = 0 ;
 static char const *rules = 0 ;
@@ -45,7 +45,7 @@ typedef struct client_s client_t, *client_t_ref ;
 struct client_s
 {
   unsigned int xindex ;
-  tain_t deadline ;
+  tain deadline ;
   bufalloc ba ;
 } ;
 
@@ -102,7 +102,7 @@ static inline int new_connection (int fd)
 
 int main (int argc, char const *const *argv, char const *const *envp)
 {
-  tain_t readtto ;
+  tain readtto ;
   int spfd ;
   int flag1 = 0 ;
   unsigned int maxconn = 40 ;
@@ -110,7 +110,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   PROG = "skabus-dynteed" ;
 
   {
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     unsigned int t = 0, T = 0 ;
     for (;;)
     {
@@ -150,13 +150,13 @@ int main (int argc, char const *const *argv, char const *const *envp)
   if (ndelay_on(0) < 0) strerr_diefu1sys(111, "set stdin non-blocking") ;
   spfd = selfpipe_init() ;
   if (spfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
-  if (sig_ignore(SIGPIPE) < 0) strerr_diefu1sys(111, "ignore SIGPIPE") ;
+  if (!sig_ignore(SIGPIPE)) strerr_diefu1sys(111, "ignore SIGPIPE") ;
   {
     sigset_t set ;
     sigemptyset(&set) ;
     sigaddset(&set, SIGTERM) ;
     sigaddset(&set, SIGHUP) ;
-    if (selfpipe_trapset(&set) < 0) strerr_diefu1sys(111, "trap signals") ;
+    if (!selfpipe_trapset(&set)) strerr_diefu1sys(111, "trap signals") ;
   }
 
   if (rulestype == 2)
@@ -178,7 +178,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
     for (;;)
     {
-      tain_t deadline ;
+      tain deadline ;
       int r = 2 ;
       iopause_fd x[2 + cont + numconn] ;
       x[0].fd = spfd ;

@@ -15,7 +15,7 @@ int skabus_pub_sendvpm_withfds_async (skabus_pub_t *a, char const *idstr, struct
   size_t idlen = strlen(idstr) ;
   char tmp[2] = "+" ;
   struct iovec vv[vlen + 2] ;
-  unixmessage_v_t m = { .v = vv, .vlen = vlen + 2, .fds = (int *)fds, .nfds = nfds } ;
+  unixmessagev m = { .v = vv, .vlen = vlen + 2, .fds = (int *)fds, .nfds = nfds } ;
   if (idlen > SKABUS_PUB_IDSTR_SIZE) return (errno = ERANGE, 0) ;
   tmp[1] = (unsigned char)idlen ;
   vv[0].iov_base = tmp ; vv[0].iov_len = 2 ;

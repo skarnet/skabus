@@ -8,7 +8,7 @@
 
 #include <skabus/pub.h>
 
-int skabus_pub_send_cb (unixmessage_t const *m, void *p)
+int skabus_pub_send_cb (unixmessage const *m, void *p)
 {
   skabus_pub_send_result_t *r = p ;
   if (!m->len || m->nfds) return (errno = EPROTO, 0) ;

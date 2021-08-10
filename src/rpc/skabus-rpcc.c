@@ -10,7 +10,6 @@
 #include <errno.h>
 #include <signal.h>
 
-#include <skalibs/posixishard.h>
 #include <skalibs/posixplz.h>
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
@@ -39,14 +38,16 @@
 #include <skabus/rpc.h>
 #include "skabus-rpcc.h"
 
+#include <skalibs/posixishard.h>
+
 #define USAGE "skabus-rpcc [ -v verbosity ] [ -1 ] [ -c maxconn ] [ -t timeout ] [ -T lameducktimeout ] [ -C pmprog:sep:flags ] [ -y ifname:ifprog:sep:flags ... ] rpcdpath clientname"
 #define dieusage() strerr_dieusage(100, USAGE) ;
 
-static tain_t answertto = TAIN_INFINITE_RELATIVE ;
+static tain answertto = TAIN_INFINITE_RELATIVE ;
 
 static unsigned int verbosity = 1 ;
 static int cont = 1 ;
-static tain_t lameduckdeadline = TAIN_INFINITE_RELATIVE ;
+static tain lameduckdeadline = TAIN_INFINITE_RELATIVE ;
 static skabus_rpc_t a = SKABUS_RPC_ZERO ;
 
 static void quit (void)
@@ -72,8 +73,8 @@ struct interface_s
   buffer in ;
   stralloc insa ;
   bufalloc out ;
-  tain_t tto ;
-  tain_t deadline ;
+  tain tto ;
+  tain deadline ;
   genqdyn serialq ;
   char sep[2] ;
   char buf[SKABUS_RPCC_BUFSIZE] ;
@@ -103,9 +104,9 @@ static inline void interface_delete (uint32_t i, uint32_t prev)
   gensetdyn_delete(&interfaces, i) ; 
 }
 
-static int rclient_function (skabus_rpc_t *a, skabus_rpc_rinfo_t const *info, unixmessage_t const *m, void *aux)
+static int rclient_function (skabus_rpc_t *a, skabus_rpc_rinfo_t const *info, unixmessage const *m, void *aux)
 {
-  tain_t deadline ;
+  tain deadline ;
   interface_t *y = aux ;
   if (m->nfds) { unixmessage_drop(m) ; return (errno = EPROTO, 0) ; }
   if (cont)
@@ -143,7 +144,7 @@ static int interface_add (char const *ifname, char const *ifprog, char const *re
   uint32_t yy ;
   interface_t *y ;
   int fd[2] ;
-  tain_t deadline ;
+  tain deadline ;
   skabus_rpc_interface_t ifbody = { .f = &rclient_function, .cancelf = &rclient_cancel_function, .aux = y }
   char const *argv[4] = { EXECLINE_EXTBINPREFIX "execlineb", "-Pc", ifprog, 0 } ; 
   pid_t pid = child_spawn2(argv[0], argv, (char const *const *)environ, fd) ;
@@ -196,7 +197,7 @@ static inline int interface_lookup_by_name (char const *ifname, uint32_t *n, uin
 
 static int interface_remove (char const *ifname)
 {
-  tain_t deadline ;
+  tain deadline ;
   uint32_t i, prev, id ;
   if (!interface_lookup_by_name(ifname, &i, &prev)) return 0 ;
   id = INTERFACE(i)->id ;
@@ -206,7 +207,7 @@ static int interface_remove (char const *ifname)
   return skabus_rpc_interface_unregister_g(a, INTERFACE(i)->id, &deadline) ;
 }
 
-static inline int interface_prepare_iopause (uint32_t i, tain_t *deadline, iopause_fd *x, uint32_t *j)
+static inline int interface_prepare_iopause (uint32_t i, tain *deadline, iopause_fd *x, uint32_t *j)
 {
   interface_t *y = INTERFACE(i) ;
   if (tain_less(&y->deadline, deadline)) *deadline = y->deadline ;
@@ -235,7 +236,7 @@ static inline int interface_event (iopause_fd const *x, uint32_t i)
     if (!genqdyn_n(&y->serialq)) return 0 ;
     while (genqdyn_n(&y->serialq))
     {
-      tain_t deadline ;
+      tain deadline ;
       int r = sanitize_read(skagetln(&y->in, &y->insa, y->sep[1])) ;
       if (r < 0) return 0 ;
       if (!r) break ;
@@ -253,10 +254,10 @@ static inline int interface_event (iopause_fd const *x, uint32_t i)
 
 
 
-static int query (char const *ifname, char const *q, tain_t const *limit, uint64_t *qid)
+static int query (char const *ifname, char const *q, tain const *limit, uint64_t *qid)
 {
   uint64_t id ;
-  tain_t deadline ;
+  tain deadline ;
   tain_uint(&deadline, 2) ;
   tain_add_g(&deadline, &deadline) ;
   id = skabus_rpc_send_g(a, ifname, q, strlen(q), limit, &deadline) ;
@@ -273,9 +274,9 @@ struct client_s
 {
   uint32_t next ;
   uint32_t xindex ;
-  textmessage_sender_t out ;
-  textmessage_receiver_t in ;
-  tain_t deadline ;
+  textmessage_sender out ;
+  textmessage_receiver in ;
+  tain deadline ;
   uint64_t query ;
 } ;
 
@@ -301,14 +302,14 @@ static inline void client_delete (uint32_t cc, uint32_t prev)
 
 static void client_setdeadline (client_t *c)
 {
-  tain_t blah ;
+  tain blah ;
   tain_half(&blah, &tain_infinite_relative) ;
   tain_add_g(&blah, &blah) ;
   if (tain_less(&blah, &c->deadline))
     tain_add_g(&c->deadline, &answertto) ;
 }
 
-static inline int client_prepare_iopause (uint32_t i, tain_t *deadline, iopause_fd *x, uint32_t *j)
+static inline int client_prepare_iopause (uint32_t i, tain *deadline, iopause_fd *x, uint32_t *j)
 {
   client_t *c = CLIENT(i) ;
   if (tain_less(&c->deadline, deadline)) *deadline = c->deadline ;
@@ -397,7 +398,7 @@ static int do_interface_unregister (uint32_t cc, char const *s, size_t len)
 static int do_query (uint32_t cc, char const *s, size_t len)
 {
   client_t *c = CLIENT(cc) ;
-  tain_t limit ;
+  tain limit ;
   uint32_t querylen, timeout ;
   unsigned char ifnamelen ;
   if (len < 12) return (errno = EPROTO, 0) ;
@@ -428,12 +429,12 @@ static int do_error (uint32_t cc, char const *s, size_t len)
   return (errno = EPROTO, 0) ;
 }
 
-typedef int parsefunc_t (uint32_t, char const *, size_t) ;
-typedef parsefunc_t *parsefunc_t_ref ;
+typedef int parse_func (uint32_t, char const *, size_t) ;
+typedef parse_func *parse_func_ref ;
 
 static int parse_client_protocol (struct iovec const *v, void *p)
 {
-  static parsefunc_t_ref const f[5] =
+  static parse_func_ref const f[5] =
   {
     &do_interface_register,
     &do_interface_unregister,
@@ -459,7 +460,7 @@ static void removeclient (uint32_t *i, uint32_t j)
 
 int main (int argc, char const *const *argv, char const *const *envp)
 {
-  tain_t deadline ;
+  tain deadline ;
   int spfd ;
   int flag1 = 0 ;
   uint32_t maxconn = 8 ;
@@ -467,7 +468,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   PROG = "skabus-rpcc" ;
 
   {
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     unsigned int t = 0, T = 0 ;
     for (;;)
     {
@@ -511,13 +512,13 @@ int main (int argc, char const *const *argv, char const *const *envp)
   else close(1) ;
   spfd = selfpipe_init() ;
   if (spfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
-  if (sig_ignore(SIGPIPE) < 0) strerr_diefu1sys(111, "ignore SIGPIPE") ;
+  if (!sig_ignore(SIGPIPE)) strerr_diefu1sys(111, "ignore SIGPIPE") ;
   {
     sigset_t set ;
     sigemptyset(&set) ;
     sigaddset(&set, SIGTERM) ;
     sigaddset(&set, SIGHUP) ;
-    if (selfpipe_trapset(&set) < 0) strerr_diefu1sys(111, "trap signals") ;
+    if (!selfpipe_trapset(&set)) strerr_diefu1sys(111, "trap signals") ;
   }
 
   tain_now_set_stopwatch_g() ;

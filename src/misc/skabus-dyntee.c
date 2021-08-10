@@ -34,7 +34,7 @@ int main (int argc, char const *const *argv)
   char const *rulesfile = 0 ;
   PROG = "skabus-dyntee" ;
   {
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     for (;;)
     {
       register int opt = subgetopt_r(argc, argv, "Dd1Uc:b:u:g:G:t:T:i:x:", &l) ;

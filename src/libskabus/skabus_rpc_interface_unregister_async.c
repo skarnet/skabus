@@ -11,7 +11,7 @@
 
 #include <skabus/rpc.h>
 
-static int skabus_rpc_interface_unregister_cb (unixmessage_t const *m, void *p)
+static int skabus_rpc_interface_unregister_cb (unixmessage const *m, void *p)
 {
   skabus_rpc_interface_result_t *r = p ;
   if (m->len != 1 || m->nfds) return (errno = EPROTO, 0) ;

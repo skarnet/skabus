@@ -14,7 +14,7 @@
 
 #include <skabus/pub.h>
 
-static int handler (unixmessage_t const *m, void *x)
+static int handler (unixmessage const *m, void *x)
 {
   skabus_pub_t *a = (skabus_pub_t *)x ;
   size_t n = genalloc_len(skabus_pub_cltinfo_t, &a->info) ;

@@ -29,7 +29,7 @@ typedef struct query_s query_t, *query_t_ref ;
 struct query_s
 {
   uint64_t serial ;
-  tain_t deadline ;
+  tain deadline ;
   uint32_t client ;
   uint32_t clientindex ;
   uint32_t interface ;
@@ -78,11 +78,11 @@ struct client_s
   uint32_t next ;
   uid_t uid ;
   gid_t gid ;
-  tain_t deadline ;
+  tain deadline ;
   genalloc interfaces ; /* uint32_t */
   gensetdyn queries ; /* uint32_t */
-  unixconnection_t sync ;
-  unixconnection_t async ;
+  unixconnection sync ;
+  unixconnection async ;
   uint32_t xindex[2] ;
   regex_t idstr_re ;
   regex_t interfaces_re ;
@@ -118,11 +118,11 @@ extern int query_cancel (uint32_t, char) ;
 extern int query_cancelremove (uint32_t, char) ;
 extern int query_lookup_by_serial (uint64_t, uint32_t *) ;
 extern int query_lookup_by_mindeadline (uint32_t *) ;
-extern void query_get_mindeadline (tain_t *) ;
-extern int query_add (uint32_t *, tain_t const *, uint32_t, uint32_t) ;
-extern int query_send (uint32_t, unixmessage_t const *) ;
-extern int query_sendpm (uint32_t, unixmessage_t const *) ;
-extern void query_reply (uint32_t, char, unixmessage_t const *) ;
+extern void query_get_mindeadline (tain *) ;
+extern int query_add (uint32_t *, tain const *, uint32_t, uint32_t) ;
+extern int query_send (uint32_t, unixmessage const *) ;
+extern int query_sendpm (uint32_t, unixmessage const *) ;
+extern void query_reply (uint32_t, char, unixmessage const *) ;
 
 extern void interface_remove (uint32_t) ;
 extern int interface_lookup_by_name (char const *, uint32_t *) ;
@@ -132,15 +132,15 @@ extern int interface_add (uint32_t *, char const *, size_t, uint32_t, char const
 #define client_idstr(c) (INTERFACE(genalloc_s(uint32_t, &(c)->interfaces)[0])->name + 1)
 extern void client_remove (uint32_t, uint32_t) ;
 extern void client_add (uint32_t *, regex_t const *, regex_t const *, uid_t, gid_t, int, uint32_t) ;
-extern void client_nextdeadline (uint32_t, tain_t *) ;
+extern void client_nextdeadline (uint32_t, tain *) ;
 extern void client_setdeadline (client_t *) ;
-extern int client_prepare_iopause (uint32_t, tain_t *, iopause_fd *, uint32_t *, int) ;
+extern int client_prepare_iopause (uint32_t, tain *, iopause_fd *, uint32_t *, int) ;
 extern int client_flush (uint32_t, iopause_fd const *) ;
 extern int client_read (uint32_t, iopause_fd const *) ;
 
-extern int parse_protocol_sync (unixmessage_t const *, void *) ;
-extern int parse_protocol_async (unixmessage_t const *, void *) ;
+extern int parse_protocol_sync (unixmessage const *, void *) ;
+extern int parse_protocol_async (unixmessage const *, void *) ;
 
-extern tain_t answertto ;
+extern tain answertto ;
 
 #endif

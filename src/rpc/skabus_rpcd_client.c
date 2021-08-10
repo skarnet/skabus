@@ -62,7 +62,7 @@ void client_remove (uint32_t i, uint32_t prev)
 
 void client_setdeadline (client_t *c)
 {
-  tain_t blah ;
+  tain blah ;
   tain_half(&blah, &tain_infinite_relative) ;
   tain_add_g(&blah, &blah) ;
   if (tain_less(&blah, &c->deadline)) tain_add_g(&c->deadline, &answertto) ;
@@ -87,13 +87,13 @@ void client_add (uint32_t *d, regex_t const *idstr_re, regex_t const *interfaces
   *d = cc ;
 }
 
-void client_nextdeadline (uint32_t i, tain_t *deadline)
+void client_nextdeadline (uint32_t i, tain *deadline)
 {
   client_t *c = CLIENT(i) ;
   if (tain_less(&c->deadline, deadline)) *deadline = c->deadline ;
 }
 
-int client_prepare_iopause (uint32_t cc, tain_t *deadline, iopause_fd *x, uint32_t *j, int notlameduck)
+int client_prepare_iopause (uint32_t cc, tain *deadline, iopause_fd *x, uint32_t *j, int notlameduck)
 {
   client_t *c = CLIENT(cc) ;
   int inflight = 0 ;
@@ -158,7 +158,7 @@ int client_read (uint32_t cc, iopause_fd const *x)
   {
     if (unixmessage_sender_fd(&c->async.out) < 0)
     {
-      unixmessage_t m ;
+      unixmessage m ;
       int r = unixmessage_receive(&c->sync.in, &m) ;
       if (r < 0) return -1 ;
       if (r)

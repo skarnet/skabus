@@ -36,8 +36,8 @@ static int query_serial_cmp (void const *a, void const *b, void *x)
 
 static int query_deadline_cmp (void const *a, void const *b, void *x)
 {
-  tain_t const *aa = (tain_t const *)a ;
-  tain_t const *bb = (tain_t const *)b ;
+  tain const *aa = (tain const *)a ;
+  tain const *bb = (tain const *)b ;
   (void)x ;
   return tain_less(aa, bb) ? -1 : tain_less(bb, aa) ;
 }
@@ -73,7 +73,7 @@ void query_fail (uint32_t i, char status)
   query_t *q = QUERY(i) ;
   client_t *c = CLIENT(q->client) ;
   char pack[10] = "Rssssssssr" ;
-  unixmessage_t m = { .s = pack, .len = 10, .fds = 0, .nfds = 0 } ;
+  unixmessage m = { .s = pack, .len = 10, .fds = 0, .nfds = 0 } ;
   uint64_pack_big(pack+1, q->serial) ;
   pack[9] = status ;
   if (!unixmessage_put(&c->async.out, &m))
@@ -88,7 +88,7 @@ int query_cancel (uint32_t i, char reason)
   interface_t *y = INTERFACE(q->interface) ;
   client_t *c = CLIENT(y->client) ;
   char pack[14] = "Ciiiissssssssr" ;
-  unixmessage_t m = { .s = pack, .len = 14, .fds = 0, .nfds = 0 } ;
+  unixmessage m = { .s = pack, .len = 14, .fds = 0, .nfds = 0 } ;
   uint32_pack_big(pack+1, y->id) ;
   uint64_pack_big(pack+5, q->serial) ;
   pack[13] = reason ;
@@ -114,14 +114,14 @@ int query_lookup_by_mindeadline (uint32_t *d)
   return avltree_min(&qdeadlinedict, d) ;
 }
 
-void query_get_mindeadline (tain_t *deadline)
+void query_get_mindeadline (tain *deadline)
 {
   uint32_t d ;
   if (query_lookup_by_mindeadline(&d)) *deadline = QUERY(d)->deadline ;
   else tain_add_g(deadline, &tain_infinite_relative) ;
 }
 
-int query_add (uint32_t *d, tain_t const *deadline, uint32_t client, uint32_t interface)
+int query_add (uint32_t *d, tain const *deadline, uint32_t client, uint32_t interface)
 {
   static uint64_t serial = 1 ;
   uint32_t qq, cc, yy ;
@@ -139,7 +139,7 @@ int query_add (uint32_t *d, tain_t const *deadline, uint32_t client, uint32_t in
   if (!avltree_insert(&qserialdict, qq)) goto end2 ;
   for (;;)
   {
-    static tain_t const nano1 = { .sec = TAI_ZERO, .nano = 1 } ;
+    static tain const nano1 = { .sec = TAI_ZERO, .nano = 1 } ;
     uint32_t d ;
     if (!avltree_search(&qdeadlinedict, &q->deadline, &d)) break ;
     tain_add(&q->deadline, &q->deadline, &nano1) ;
@@ -164,12 +164,12 @@ int query_add (uint32_t *d, tain_t const *deadline, uint32_t client, uint32_t in
   return 0 ;
 }
 
-int query_send (uint32_t qq, unixmessage_t const *m)
+int query_send (uint32_t qq, unixmessage const *m)
 {
   skabus_rpc_rinfo_t rinfo ;
   char pack[4 + SKABUS_RPC_RINFO_PACK] = "Q" ;
   struct iovec v[2] = { { .iov_base = pack, .iov_len = 4 + SKABUS_RPC_RINFO_PACK }, { .iov_base = m->s, .iov_len = m->len } } ;
-  unixmessage_v_t mtosend = { .v = v, .vlen = 2, .fds = m->fds, .nfds = m->nfds } ;
+  unixmessagev mtosend = { .v = v, .vlen = 2, .fds = m->fds, .nfds = m->nfds } ;
   query_t *q = QUERY(qq) ;
   interface_t *y = INTERFACE(q->interface) ;
   client_t *c = CLIENT(q->client) ;
@@ -190,11 +190,11 @@ int query_send (uint32_t qq, unixmessage_t const *m)
   return 1 ;
 }
 
-void query_reply (uint32_t qq, char result, unixmessage_t const *m)
+void query_reply (uint32_t qq, char result, unixmessage const *m)
 {
   char pack[11] = "R" ;
   struct iovec v[2] = { { .iov_base = pack, .iov_len = 11 }, { .iov_base = m->s, .iov_len = m->len } } ;
-  unixmessage_v_t mtosend = { .v = v, .vlen = 2, .fds = m->fds, .nfds = m->nfds } ;
+  unixmessagev mtosend = { .v = v, .vlen = 2, .fds = m->fds, .nfds = m->nfds } ;
   query_t *q = QUERY(qq) ;
   client_t *c = CLIENT(q->client) ;
   uint64_pack_big(pack+1, q->serial) ;

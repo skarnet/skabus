@@ -6,7 +6,7 @@
 
 #include <skabus/pub.h>
 
-int skabus_pub_subunsub (skabus_pub_t *a, char what, char const *id, tain_t const *deadline, tain_t *stamp)
+int skabus_pub_subunsub (skabus_pub_t *a, char what, char const *id, tain const *deadline, tain *stamp)
 {
   unsigned char r ;
   if (!skabus_pub_subunsub_async(a, what, id, &r)) return 0 ;

@@ -11,7 +11,6 @@
 #include <signal.h>
 
 #include <skalibs/posixplz.h>
-#include <skalibs/posixishard.h>
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
 #include <skalibs/types.h>
@@ -37,14 +36,16 @@
 #include <skabus/rpc.h>
 #include "skabus-rpcd.h"
 
+#include <skalibs/posixishard.h>
+
 #define USAGE "skabus-rpcd [ -v verbosity ] [ -1 ] [ -c maxconn ] [ -t timeout ] [ -T lameducktimeout ] [ -i rulesdir | -x rulesfile ] [ -S | -s ] [ -J | -j ]"
 #define dieusage() strerr_dieusage(100, USAGE) ;
 
-tain_t answertto = TAIN_INFINITE_RELATIVE ;
+tain answertto = TAIN_INFINITE_RELATIVE ;
 
 static unsigned int verbosity = 1 ;
 static int cont = 1 ;
-static tain_t lameduckdeadline = TAIN_INFINITE_RELATIVE ;
+static tain lameduckdeadline = TAIN_INFINITE_RELATIVE ;
 
 static unsigned int rulestype = 0 ;
 static char const *rules = 0 ;
@@ -78,11 +79,11 @@ static inline void handle_signals (void)
   }
 }
 
-int parse_protocol_async (unixmessage_t const *m, void *p)
+int parse_protocol_async (unixmessage const *m, void *p)
 {
   uint64_t serial ;
   uint32_t qq ;
-  unixmessage_t mtosend = { .s = m->s + 10, .len = m->len - 10, .fds = m->fds, .nfds = m->nfds } ;
+  unixmessage mtosend = { .s = m->s + 10, .len = m->len - 10, .fds = m->fds, .nfds = m->nfds } ;
   if (m->len < 10 || m->s[0] != 'R')
   {
     unixmessage_drop(m) ;
@@ -103,19 +104,19 @@ int parse_protocol_async (unixmessage_t const *m, void *p)
   return 1 ;
 }
 
-typedef int hlparsefunc_t (uint32_t, unixmessage_t *) ;
-typedef hlparsefunc_t *hlparsefunc_t_ref ;
+typedef int hlparse_func (uint32_t, unixmessage *) ;
+typedef hlparse_func *hlparse_func_ref ;
 
 static int answer (uint32_t cc, char e)
 {
-  unixmessage_t m = { .s = &e, .len = 1, .fds = 0, .nfds = 0 } ;
+  unixmessage m = { .s = &e, .len = 1, .fds = 0, .nfds = 0 } ;
   client_t *c = CLIENT(cc) ;
   if (!unixmessage_put(&c->sync.out, &m)) return 0 ;
   if (client_isregistered(cc)) client_setdeadline(c) ;
   return 1 ;
 }
 
-static int do_idstr (uint32_t cc, unixmessage_t *m)
+static int do_idstr (uint32_t cc, unixmessage *m)
 {
   uint32_t relen, pmid, yy ;
   unsigned char idlen ;
@@ -134,7 +135,7 @@ static int do_idstr (uint32_t cc, unixmessage_t *m)
   return answer(cc, 0) ;
 }
 
-static int do_interface_register (uint32_t cc, unixmessage_t *m)
+static int do_interface_register (uint32_t cc, unixmessage *m)
 {
   uint32_t id, relen, yy ;
   unsigned char iflen ;
@@ -151,7 +152,7 @@ static int do_interface_register (uint32_t cc, unixmessage_t *m)
   return answer(cc, 0) ;
 }
 
-static int do_interface_unregister (uint32_t cc, unixmessage_t *m)
+static int do_interface_unregister (uint32_t cc, unixmessage *m)
 {
   uint32_t yy ;
   unsigned char iflen ;
@@ -166,9 +167,9 @@ static int do_interface_unregister (uint32_t cc, unixmessage_t *m)
   return answer(cc, 0) ;
 }
 
-static int do_query_send (uint32_t cc, unixmessage_t *m)
+static int do_query_send (uint32_t cc, unixmessage *m)
 {
-  tain_t limit ;
+  tain limit ;
   uint32_t yy, qq ;
   unsigned char iflen ;
   int e ;
@@ -190,7 +191,7 @@ static int do_query_send (uint32_t cc, unixmessage_t *m)
   return 1 ;
 }
 
-static int do_query_cancel (uint32_t cc, unixmessage_t *m)
+static int do_query_cancel (uint32_t cc, unixmessage *m)
 {
   uint64_t serial ;
   uint32_t qq ;
@@ -203,16 +204,16 @@ static int do_query_cancel (uint32_t cc, unixmessage_t *m)
   return answer(cc, 0) ;
 }
 
-static int do_error (uint32_t cc, unixmessage_t *m)
+static int do_error (uint32_t cc, unixmessage *m)
 {
   (void)cc ;
   (void)m ;
   return (errno = EPROTO, 0) ;
 }
 
-int parse_protocol_sync (unixmessage_t const *m, void *p)
+int parse_protocol_sync (unixmessage const *m, void *p)
 {
-  static hlparsefunc_t_ref const f[6] =
+  static hlparse_func_ref const f[6] =
   {
     &do_idstr,
     &do_interface_register,
@@ -221,7 +222,7 @@ int parse_protocol_sync (unixmessage_t const *m, void *p)
     &do_query_cancel,
     &do_error
   } ;
-  unixmessage_t mcopy = { .s = m->s + 1, .len = m->len -1, .fds = m->fds, .nfds = m->nfds } ;
+  unixmessage mcopy = { .s = m->s + 1, .len = m->len -1, .fds = m->fds, .nfds = m->nfds } ;
   if (!m->len)
   {
     unixmessage_drop(m) ;
@@ -383,7 +384,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   PROG = "skabus-rpcd" ;
 
   {
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     unsigned int t = 0, T = 0 ;
     for (;;)
     {
@@ -424,13 +425,13 @@ int main (int argc, char const *const *argv, char const *const *envp)
   else close(1) ;
   spfd = selfpipe_init() ;
   if (spfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
-  if (sig_ignore(SIGPIPE) < 0) strerr_diefu1sys(111, "ignore SIGPIPE") ;
+  if (!sig_ignore(SIGPIPE)) strerr_diefu1sys(111, "ignore SIGPIPE") ;
   {
     sigset_t set ;
     sigemptyset(&set) ;
     sigaddset(&set, SIGTERM) ;
     sigaddset(&set, SIGHUP) ;
-    if (selfpipe_trapset(&set) < 0) strerr_diefu1sys(111, "trap signals") ;
+    if (!selfpipe_trapset(&set)) strerr_diefu1sys(111, "trap signals") ;
   }
 
   if (rulestype == 2)
@@ -460,7 +461,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
 
     for (;;)
     {
-      tain_t deadline ;
+      tain deadline ;
       int r = 1 ;
       uint32_t i = clientstorage[sentinel].next, j = 2 ;
       query_get_mindeadline(&deadline) ;

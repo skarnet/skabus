@@ -9,7 +9,7 @@
 
 #include <skabus/rpc.h>
 
-int skabus_rpc_get (skabus_rpc_t *a, uint64_t serial, int *result, unixmessage_t *m)
+int skabus_rpc_get (skabus_rpc_t *a, uint64_t serial, int *result, unixmessage *m)
 {
   uint32_t id ;
   skabus_rpc_qinfo_t *p ;

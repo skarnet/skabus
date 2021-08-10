@@ -4,7 +4,7 @@
 
 #include <skabus/rpc.h>
 
-int skabus_rpc_start (skabus_rpc_t *a, char const *path, tain_t const *deadline, tain_t *stamp)
+int skabus_rpc_start (skabus_rpc_t *a, char const *path, tain const *deadline, tain *stamp)
 {
   return skaclient_start_b(
     &a->connection,

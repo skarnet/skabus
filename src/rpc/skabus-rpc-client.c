@@ -26,7 +26,7 @@ int main (int argc, char const *const *argv)
   unsigned int ifn = 1 ;
   char const *interfaces[SKABUS_RPCC_INTERFACES_MAX] = { 0 } ;
   {
-    subgetopt_t l = SUBGETOPT_ZERO ;
+    subgetopt l = SUBGETOPT_ZERO ;
     for (;;)
     {
       register int opt = subgetopt_r(argc, argv, "Dd1v:c:b:t:T:C:y:", &l) ;

@@ -12,12 +12,12 @@
 #include <skabus/rpc.h>
 #include "skabus-rpc-internal.h"
 
-int skabus_rpc_sendvq_withfds_async (skabus_rpc_t *a, char const *prefix, size_t plen, char const *ifname, struct iovec const *v, unsigned int vlen, int const *fds, unsigned int nfds, unsigned char const *bits, tain_t const *limit, skabus_rpc_send_result_t *r)
+int skabus_rpc_sendvq_withfds_async (skabus_rpc_t *a, char const *prefix, size_t plen, char const *ifname, struct iovec const *v, unsigned int vlen, int const *fds, unsigned int nfds, unsigned char const *bits, tain const *limit, skabus_rpc_send_result_t *r)
 {
   size_t iflen = strlen(ifname) ;
   char pack[2 + TAIN_PACK] = "Q" ;
   struct iovec vv[vlen + 3] ;
-  unixmessage_v_t m = { .v = vv, .vlen = vlen + 3, .fds = (int *)fds, .nfds = nfds } ;
+  unixmessagev m = { .v = vv, .vlen = vlen + 3, .fds = (int *)fds, .nfds = nfds } ;
   iflen += plen ;
   if (iflen > SKABUS_RPC_INTERFACE_MAXLEN) return (errno = ENAMETOOLONG, 0) ;
   if (!gensetdyn_new(&a->q, &r->i)) return 0 ;

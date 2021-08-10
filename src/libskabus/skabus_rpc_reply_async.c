@@ -12,7 +12,7 @@ int skabus_rpc_reply_withfds_async (skabus_rpc_t *a, uint64_t serial, char resul
 {
   char pack[10] = "R" ;
   struct iovec v[2] = { { .iov_base = pack, .iov_len = 10 }, { .iov_base = (char *)s, .iov_len = len } } ;
-  unixmessage_v_t m = { .v = v, .vlen = 2, .fds = (int *)fds, .nfds = nfds } ;
+  unixmessagev m = { .v = v, .vlen = 2, .fds = (int *)fds, .nfds = nfds } ;
   uint64_pack_big(pack+1, serial) ;
   pack[9] = result ;
   return skaclient_aputv_and_close(&a->connection, &m, bits) ;

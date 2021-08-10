@@ -11,7 +11,7 @@
 
 #include <skabus/pub.h>
 
-static int skabus_pub_list_cb (unixmessage_t const *m, void *p)
+static int skabus_pub_list_cb (unixmessage const *m, void *p)
 {
   skabus_pub_list_result_t *r = p ;
   uint32_t n ;

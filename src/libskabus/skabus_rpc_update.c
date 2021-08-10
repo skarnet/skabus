@@ -17,10 +17,10 @@
 
 #include <skabus/rpc.h>
 
-typedef int localhandler_func_t (skabus_rpc_t *, unixmessage_t *) ;
-typedef localhandler_func_t *localhandler_func_t_ref ;
+typedef int localhandler_func (skabus_rpc_t *, unixmessage *) ;
+typedef localhandler_func *localhandler_func_ref ;
 
-static int skabus_rpc_serve (skabus_rpc_t *a, unixmessage_t *m)
+static int skabus_rpc_serve (skabus_rpc_t *a, unixmessage *m)
 {
   skabus_rpc_rinfo_t rinfo ;
   uint32_t ifid ;
@@ -34,7 +34,7 @@ static int skabus_rpc_serve (skabus_rpc_t *a, unixmessage_t *m)
   return (*p->f)(a, &rinfo, m, p->data) ;
 }
 
-static int skabus_rpc_cancelr (skabus_rpc_t *a, unixmessage_t *m)
+static int skabus_rpc_cancelr (skabus_rpc_t *a, unixmessage *m)
 {
   uint64_t serial ;
   uint32_t ifid ;
@@ -47,7 +47,7 @@ static int skabus_rpc_cancelr (skabus_rpc_t *a, unixmessage_t *m)
   return (*p->cancelf)(serial, m->s[12], p->data) ;
 }
 
-static int skabus_rpc_handle_reply (skabus_rpc_t *a, unixmessage_t *m)
+static int skabus_rpc_handle_reply (skabus_rpc_t *a, unixmessage *m)
 {
   skabus_rpc_qinfo_t *p ;
   uint64_t serial ;
@@ -84,18 +84,18 @@ static int skabus_rpc_handle_reply (skabus_rpc_t *a, unixmessage_t *m)
   return 1 ;
 }
 
-static int skabus_rpc_error (skabus_rpc_t *a, unixmessage_t *m)
+static int skabus_rpc_error (skabus_rpc_t *a, unixmessage *m)
 {
   (void)a ;
   (void)m ;
   return (errno = EPROTO, 0) ;
 }
 
-static int handler (unixmessage_t const *m, void *x)
+static int handler (unixmessage const *m, void *x)
 {
   skabus_rpc_t *a = x ;
-  unixmessage_t mm = { .s = m->s + 1, .len = m->len - 1, .fds = m->fds, .nfds = m->nfds } ;
-  static localhandler_func_t_ref const f[4] = 
+  unixmessage mm = { .s = m->s + 1, .len = m->len - 1, .fds = m->fds, .nfds = m->nfds } ;
+  static localhandler_func_ref const f[4] = 
   {
     &skabus_rpc_serve,
     &skabus_rpc_handle_reply,
