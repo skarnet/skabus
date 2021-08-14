@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <signal.h>
 
+#include <skalibs/posixplz.h>
 #include <skalibs/types.h>
 #include <skalibs/siovec.h>
 #include <skalibs/allreadwrite.h>
@@ -19,12 +20,12 @@
 #include <skalibs/buffer.h>
 #include <skalibs/strerr2.h>
 #include <skalibs/tai.h>
-#include <skalibs/getpeereid.h>
 #include <skalibs/djbunix.h>
 #include <skalibs/sig.h>
 #include <skalibs/iopause.h>
 #include <skalibs/selfpipe.h>
 #include <skalibs/cdb.h>
+
 #include <s6/accessrules.h>
 
 #define USAGE "skabus-dynteed [ -d fdsocket ] [ -c maxconn ] [ -1 ] [ -t timeout ] [ -T lameducktimeout ] [ -i rulesdir | -x rulesfile ]"
