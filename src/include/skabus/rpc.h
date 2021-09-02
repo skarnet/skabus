@@ -103,8 +103,8 @@ typedef struct skabus_rpc_qinfo_s skabus_rpc_qinfo_t, *skabus_rpc_qinfo_t_ref ;
 struct skabus_rpc_qinfo_s
 {
   uint64_t serial ;
-  char status ;
-  char result ;
+  unsigned char status ;
+  unsigned char result ;
   unixmessage message ;
 } ;
 #define SKABUS_RPC_QINFO_ZERO { .serial = 0, .status = EINVAL, .result = ECONNABORTED, .message = UNIXMESSAGE_ZERO }
