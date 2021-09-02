@@ -106,9 +106,9 @@ int parse_protocol_async (unixmessage const *m, void *p)
 typedef int hlparse_func (uint32_t, unixmessage *) ;
 typedef hlparse_func *hlparse_func_ref ;
 
-static int answer (uint32_t cc, char e)
+static int answer (uint32_t cc, unsigned char e)
 {
-  unixmessage m = { .s = &e, .len = 1, .fds = 0, .nfds = 0 } ;
+  unixmessage m = { .s = (char *)&e, .len = 1, .fds = 0, .nfds = 0 } ;
   client_t *c = CLIENT(cc) ;
   if (!unixmessage_put(&c->sync.out, &m)) return 0 ;
   if (client_isregistered(cc)) client_setdeadline(c) ;

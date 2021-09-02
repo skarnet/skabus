@@ -338,9 +338,9 @@ static inline int client_flush (uint32_t i, iopause_fd const *x)
   return 1 ;
 }
 
-static int answer (client_t *c, char e)
+static int answer (client_t *c, unsigned char e)
 {
-  unixmessage m = { .s = &e, .len = 1, .fds = 0, .nfds = 0 } ;
+  unixmessage m = { .s = (char *)&e, .len = 1, .fds = 0, .nfds = 0 } ;
   if (!unixmessage_put(&c->sync.out, &m)) return 0 ;
   client_setdeadline(c) ;
   return 1 ;
