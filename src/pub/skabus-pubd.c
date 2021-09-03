@@ -310,10 +310,10 @@ static inline int client_flush (uint32_t i, iopause_fd const *x)
       if (error_isagain(errno)) isflushed = 0 ;
       else
       {
-        char what[2] = "-" ;
+        unsigned char what[2] = "-" ;
         what[1] = errno ;
         if (verbosity) strerr_warnwu2sys("unixmessage_sender_flush ", c->idstr) ;
-        if (!announce(what, 2, c->idstr)) dienomem() ;
+        if (!announce((char *)what, 2, c->idstr)) dienomem() ;
         return 0 ;
       }
     else isflushed = 1 ;
@@ -325,10 +325,10 @@ static inline int client_flush (uint32_t i, iopause_fd const *x)
       if (error_isagain(errno)) isflushed = 0 ;
       else
       {
-        char what[2] = "-" ;
+        unsigned char what[2] = "-" ;
         what[1] = errno ;
         if (verbosity) strerr_warnwu2sys("unixmessage_sender_flush ", c->idstr) ;
-        if (!announce(what, 2, c->idstr)) dienomem() ;
+        if (!announce((char *)what, 2, c->idstr)) dienomem() ;
         return 0 ;
       }
     else isflushed = !!isflushed ;
@@ -375,7 +375,7 @@ static int do_register (uint32_t cc, unixmessage const *m)
   avltreen_insert(clientmap, cc) ;
   if (!announce("+", 1, s))
   {
-    char e = errno ;
+    unsigned char e = errno ;
     regfree(&c->write_re) ;
     regfree(&c->subscribe_re) ;
     avltreen_delete(clientmap, c->idstr) ;
@@ -877,9 +877,9 @@ int main (int argc, char const *const *argv, char const *const *envp)
         for (j = sentinel, i = clientstorage[sentinel].next ; i != sentinel ; j = i, i = clientstorage[i].next)
           if (!tain_future(&clientstorage[i].deadline))
           {
-            char what[2] = "-" ;
+            unsigned char what[2] = "-" ;
             what[1] = ETIMEDOUT ;
-            if (!announce(what, 2, CLIENT(i)->idstr)) dienomem() ;
+            if (!announce((char *)what, 2, CLIENT(i)->idstr)) dienomem() ;
             remove(&i, j) ;
           }
         continue ;
@@ -898,9 +898,9 @@ int main (int argc, char const *const *argv, char const *const *envp)
             case -1 :
             case -2 :
             {
-              char what[2] = "-" ;
+              unsigned char what[2] = "-" ;
               what[1] = errno ;
-              if (!announce(what, 2, CLIENT(i)->idstr)) dienomem() ;
+              if (!announce((char *)what, 2, CLIENT(i)->idstr)) dienomem() ;
             }
             remove(&i, j) ;
             case 1 : break ;

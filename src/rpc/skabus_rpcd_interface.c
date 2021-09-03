@@ -47,7 +47,7 @@ static inline void interface_delete (uint32_t i)
 static int query_fail_iter (char *s, void *reason)
 {
   uint32_t i = *(uint32_t *)s ;
-  query_fail(i, *(char *)reason) ;
+  query_fail(i, *(unsigned char *)reason) ;
   return 1 ;
 }
 
@@ -63,7 +63,7 @@ void interface_remove (uint32_t i)
   interface_t *y = INTERFACE(i) ;
   client_t *c = CLIENT(y->client) ;
   uint32_t n = gensetdyn_n(&y->queries) ;
-  char reason = ECONNRESET ;
+  unsigned char reason = ECONNRESET ;
   gensetdyn_iter(&y->queries, &query_fail_iter, &reason) ;
   n = genalloc_len(uint32_t, &c->interfaces) ;
   client_interfacemove(c, n-1, y->index) ;

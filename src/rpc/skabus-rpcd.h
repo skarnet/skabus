@@ -113,9 +113,9 @@ extern unsigned int sentinel ;
 #define numconn (genset_n(clients) - 1)
 
 extern void query_remove (uint32_t) ;
-extern void query_fail (uint32_t, char) ;
-extern int query_cancel (uint32_t, char) ;
-extern int query_cancelremove (uint32_t, char) ;
+extern void query_fail (uint32_t, unsigned char) ;
+extern int query_cancel (uint32_t, unsigned char) ;
+extern int query_cancelremove (uint32_t, unsigned char) ;
 extern int query_lookup_by_serial (uint64_t, uint32_t *) ;
 extern int query_lookup_by_mindeadline (uint32_t *) ;
 extern void query_get_mindeadline (tain *) ;

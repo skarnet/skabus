@@ -68,7 +68,7 @@ void query_remove (uint32_t i)
   query_delete(i) ;
 }
 
-void query_fail (uint32_t i, char status)
+void query_fail (uint32_t i, unsigned char status)
 {
   query_t *q = QUERY(i) ;
   client_t *c = CLIENT(q->client) ;
@@ -82,7 +82,7 @@ void query_fail (uint32_t i, char status)
   client_setdeadline(c) ;
 }
 
-int query_cancel (uint32_t i, char reason)
+int query_cancel (uint32_t i, unsigned char reason)
 {
   query_t *q = QUERY(i) ;
   interface_t *y = INTERFACE(q->interface) ;
@@ -97,7 +97,7 @@ int query_cancel (uint32_t i, char reason)
   return 1 ;
 }
 
-int query_cancelremove (uint32_t i, char reason)
+int query_cancelremove (uint32_t i, unsigned char reason)
 {
   if (!query_cancel(i, reason)) return 0 ;
   query_remove(i) ;

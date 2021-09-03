@@ -46,13 +46,13 @@ static inline void client_delete (uint32_t i, uint32_t prev)
 static int query_cancelremove_iter (char *s, void *reason)
 {
   uint32_t i = *(uint32_t *)s ;
-  return query_cancelremove(i, *(char *)reason) ;
+  return query_cancelremove(i, *(unsigned char *)reason) ;
 }
 
 void client_remove (uint32_t i, uint32_t prev)
 {
   client_t *c = CLIENT(i) ;
-  char reason = ECONNABORTED ;
+  unsigned char reason = ECONNABORTED ;
   if (gensetdyn_iter(&c->queries, &query_cancelremove_iter, &reason) < gensetdyn_n(&c->queries))
     strerr_diefu1sys(111, "query_cancelremove_iter in client_remove") ;
   while (genalloc_len(uint32_t, &c->interfaces))
