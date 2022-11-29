@@ -18,7 +18,7 @@
 #include <skalibs/allreadwrite.h>
 #include <skalibs/error.h>
 #include <skalibs/cdb.h>
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 #include <skalibs/selfpipe.h>
 #include <skalibs/sig.h>
 #include <skalibs/djbunix.h>

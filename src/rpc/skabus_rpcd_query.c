@@ -6,7 +6,7 @@
 #include <skalibs/uint32.h>
 #include <skalibs/uint64.h>
 #include <skalibs/tai.h>
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/avltree.h>

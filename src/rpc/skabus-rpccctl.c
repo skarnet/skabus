@@ -4,7 +4,7 @@
 #include <string.h>
 #include <skalibs/types.h>
 #include <skalibs/sgetopt.h>
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 #include <skalibs/tai.h>
 #include <skalibs/buffer.h>
 #include <skalibs/stralloc.h>

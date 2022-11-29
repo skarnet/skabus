@@ -3,7 +3,7 @@
 #ifndef SKABUS_RPCC_H
 #define SKABUS_RPCC_H
 
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 
 #define SKABUS_RPCC_BUFSIZE 4095
 #define SKABUS_RPCC_MAX 256

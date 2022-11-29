@@ -6,7 +6,7 @@
 #include <regex.h>
 
 #include <skalibs/posixplz.h>
-#include <skalibs/strerr2.h>
+#include <skalibs/strerr.h>
 #include <skalibs/genalloc.h>
 #include <skalibs/gensetdyn.h>
 #include <skalibs/avltree.h>
