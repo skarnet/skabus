@@ -376,7 +376,6 @@ static inline int new_connection (int fd, uid_t *uid, gid_t *gid, regex_t *idstr
 
 int main (int argc, char const *const *argv, char const *const *envp)
 {
-  int spfd ;
   int flag1 = 0 ;
   uint32_t maxconn = 64 ;
   unsigned int pubflags = 0 ;
@@ -422,8 +421,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
       strerr_dief1sys(100, "called with option -1 but stdout said") ;
   }
   else close(1) ;
-  spfd = selfpipe_init() ;
-  if (spfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
+  if (selfpipe_init() == -1) strerr_diefu1sys(111, "selfpipe_init") ;
   if (!sig_ignore(SIGPIPE)) strerr_diefu1sys(111, "ignore SIGPIPE") ;
   {
     sigset_t set ;
@@ -448,7 +446,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
     sentinel = genset_new(&clientinfo) ;
     clientstorage[sentinel].next = sentinel ;
     clients = &clientinfo ;
-    x[0].fd = spfd ; x[0].events = IOPAUSE_READ ;
+    x[0].fd = selfpipe_fd() ; x[0].events = IOPAUSE_READ ;
     x[1].fd = 0 ;
 
     if (flag1)

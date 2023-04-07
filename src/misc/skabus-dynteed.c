@@ -104,7 +104,6 @@ static inline int new_connection (int fd)
 int main (int argc, char const *const *argv, char const *const *envp)
 {
   tain readtto ;
-  int spfd ;
   int flag1 = 0 ;
   unsigned int maxconn = 40 ;
   unsigned int fdsocket = 3 ;
@@ -149,8 +148,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
   }
   else close(1) ;
   if (ndelay_on(0) < 0) strerr_diefu1sys(111, "set stdin non-blocking") ;
-  spfd = selfpipe_init() ;
-  if (spfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
+  if (selfpipe_init() == -1) strerr_diefu1sys(111, "selfpipe_init") ;
   if (!sig_ignore(SIGPIPE)) strerr_diefu1sys(111, "ignore SIGPIPE") ;
   {
     sigset_t set ;
@@ -182,7 +180,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
       tain deadline ;
       int r = 2 ;
       iopause_fd x[2 + cont + numconn] ;
-      x[0].fd = spfd ;
+      x[0].fd = selfpipe_fd() ;
       x[0].events = IOPAUSE_READ ;
       x[1].fd = fdsocket ;
       x[1].events = (cont && (numconn < maxconn)) ? IOPAUSE_READ : 0 ;

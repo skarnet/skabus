@@ -744,7 +744,6 @@ static inline int new_connection (int fd, regex_t *idstr_re, unsigned int *flags
 
 int main (int argc, char const *const *argv, char const *const *envp)
 {
-  int spfd ;
   int flag1 = 0 ;
   char const *announce_re = "^$" ;
   unsigned int maxconn = 40 ;
@@ -804,8 +803,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
     }
   }
   msgfsdir = argv[0] ;
-  spfd = selfpipe_init() ;
-  if (spfd < 0) strerr_diefu1sys(111, "selfpipe_init") ;
+  if (selfpipe_init() == -1) strerr_diefu1sys(111, "selfpipe_init") ;
   if (!sig_ignore(SIGPIPE)) strerr_diefu1sys(111, "ignore SIGPIPE") ;
   {
     sigset_t set ;
@@ -845,7 +843,7 @@ int main (int argc, char const *const *argv, char const *const *envp)
     avltree_init(&clientstorage[sentinel].subscribers, 3, 3, 8, &uint32_dtok, &ptr_cmp, 0) ;
     avltreen_insert(&blobmap, sentinel) ;
     clientmap = &blobmap ;
-    x[0].fd = spfd ; x[0].events = IOPAUSE_READ ;
+    x[0].fd = selfpipe_fd() ; x[0].events = IOPAUSE_READ ;
     x[1].fd = 0 ;
     for (unsigned int i = 0 ; i < sizeof(fdcountblob) / sizeof(uint32_t) ; i++) fdcountblob[i] = 0 ;
     fdcount = fdcountblob ;
