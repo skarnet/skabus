@@ -44,10 +44,9 @@ static inline void interface_delete (uint32_t i)
     strerr_diefu1sys(111, "gensetdyn_delete in interface_delete") ;
 }
 
-static int query_fail_iter (char *s, void *reason)
+static int query_fail_iter (void *s, void *reason)
 {
-  uint32_t i = *(uint32_t *)s ;
-  query_fail(i, *(unsigned char *)reason) ;
+  query_fail(*(uint32_t *)s, *(unsigned char *)reason) ;
   return 1 ;
 }
 

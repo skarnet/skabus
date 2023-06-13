@@ -43,10 +43,9 @@ static inline void client_delete (uint32_t i, uint32_t prev)
   genset_delete(clients, i) ;
 }
 
-static int query_cancelremove_iter (char *s, void *reason)
+static int query_cancelremove_iter (void *s, void *reason)
 {
-  uint32_t i = *(uint32_t *)s ;
-  return query_cancelremove(i, *(unsigned char *)reason) ;
+  return query_cancelremove(*(uint32_t *)s, *(unsigned char *)reason) ;
 }
 
 void client_remove (uint32_t i, uint32_t prev)
