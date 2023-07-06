@@ -272,7 +272,7 @@ static int store_text (char const *s, size_t len)
     return -1 ;
   }
   fd_close(fd) ;
-  fd = open(fn, O_RDONLY) ;  /* too bad you can't just lose writing rights */
+  fd = open2(fn, O_RDONLY) ;  /* too bad you can't just lose writing rights */
   unlink_void(fn) ;  /* still there as long as fd is open */
   return fd ;
 }
