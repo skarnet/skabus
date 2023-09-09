@@ -23,6 +23,7 @@
 #include <skalibs/sig.h>
 #include <skalibs/stralloc.h>
 #include <skalibs/bufalloc.h>
+#include <skalibs/cspawn.h>
 #include <skalibs/djbunix.h>
 #include <skalibs/sgetopt.h>
 #include <skalibs/tai.h>
@@ -143,7 +144,7 @@ static int interface_add (char const *ifname, char const *ifprog, char const *re
 {
   uint32_t yy ;
   interface_t *y ;
-  int fd[2] ;
+  int fd[2] = { 0, 1 } ;
   tain deadline ;
   skabus_rpc_interface_t ifbody = { .f = &rclient_function, .cancelf = &rclient_cancel_function, .aux = y }
   char const *argv[4] = { EXECLINE_EXTBINPREFIX "execlineb", "-Pc", ifprog, 0 } ; 
