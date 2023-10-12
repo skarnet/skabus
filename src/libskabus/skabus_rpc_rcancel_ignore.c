@@ -2,7 +2,7 @@
 
 #include <skabus/rpc.h>
 
-int skabus_rpc_rcancel_ignore (uint64 serial, char reason, void *data)
+int skabus_rpc_rcancel_ignore (uint64_t serial, char reason, void *data)
 {
   (void)serial ;
   (void)reason ;
