@@ -23,8 +23,9 @@ Fine tuning of the installation directories:
   --libexecdir=DIR              package-scoped executables [EPREFIX/libexec]
   --libdir=DIR                  static library files [PREFIX/lib]
   --includedir=DIR              C header files [PREFIX/include]
+  --sysconfdir=DIR              global configuration files [PREFIX/etc]
   --pkgconfdir=DIR              pkg-config .pc files [PREFIX/lib/pkgconfig]
-
+${configure_help_install}
  If no --prefix option is given, by default libdir (but not dynlibdir) will be
  /usr/lib, and includedir will be /usr/include.
 
@@ -34,7 +35,7 @@ Dependencies:
   --with-lib=DIR                add DIR to the list of searched directories for static libraries
   --with-dynlib=DIR             add DIR to the list of searched directories for shared libraries
   --with-pkgconfig[=PROG]       use pkg-config to look for dependencies
-
+${configure_help_dependencies}
  If no --prefix option is given, by default sysdeps will be fetched from
  /usr/lib/skalibs/sysdeps.
 
@@ -44,10 +45,10 @@ Optional features:
   --disable-allstatic           do not prefer linking against static libraries [enabled]
   --enable-static-libc          make entirely static binaries [disabled]
   --disable-all-pic             do not build executables or static libs as PIC [enabled]
+  --enable-pkgconfig            Build and install .pc files for pkg-config [disabled]
   --enable-slashpackage[=ROOT]  assume /package installation at ROOT [disabled]
-  --enable-absolute-paths       do not rely on PATH to access this package's binaries,
-                                  hardcode absolute BINDIR/foobar paths instead [disabled]
-
+  --enable-absolute-paths       hardcode absolute BINDIR/foobar paths in binaries [disabled]
+${configure_help_options}
 EOF
 exit 0
 }
@@ -141,7 +142,9 @@ libexecdir='$exec_prefix/libexec'
 bindir='$exec_prefix/bin'
 libdir='$prefix/lib'
 includedir='$prefix/include'
+sysconfdir='$prefix/etc'
 pkgconfdir='$prefix/lib/pkgconfig'
+shebangdir='$bindir'
 sysdeps='$prefix/lib/skalibs/sysdeps'
 manualsysdeps=false
 shared=false
@@ -164,6 +167,7 @@ deplibpath=''
 vpaths=''
 vpathd=''
 build=
+${configure_init_vars}
 
 for arg ; do
   case "$arg" in
@@ -175,10 +179,11 @@ for arg ; do
     --bindir=*) bindir=${arg#*=} ;;
     --libdir=*) libdir=${arg#*=} ;;
     --includedir=*) includedir=${arg#*=} ;;
+    --sysconfdir=*) sysconfdir=${arg#*=} ;;
     --pkgconfigdir=*) pkgconfigdir=${arg#*=} ;;
     --with-sysdeps=*) sysdeps=${arg#*=} manualsysdeps=true ;;
-    --with-include=*) var=${arg#*=} ; stripdir var ; addincpath="$addincpath -I$var" ;;
-    --with-lib=*) var=${arg#*=} ; stripdir var ; addlibspath="$addlibspath -L$var" ; vpaths="$vpaths $var" ;;
+    --with-include=*) var=${arg#*=} ; stripdir var ; addincpath="$addincpath -I$var" ; depincpath="${depincpath}${depincpath:+ }-I$var" ;;
+    --with-lib=*) var=${arg#*=} ; stripdir var ; addlibspath="$addlibspath -L$var" ; deplibpath="${deplibpath}${deplibpath:+ }-I$var" ; vpaths="$vpaths $var" ;;
     --with-dynlib=*) var=${arg#*=} ; stripdir var ; addlibdpath="$addlibdpath -L$var" ; vpathd="$vpathd $var" ;;
     --with-pkgconfig=*) pkgconf=${arg#*=} ;;
     --with-pkgconfig) pkgconf=${PKG_CONFIG:-pkg-config} ;;
@@ -200,6 +205,8 @@ for arg ; do
     --disable-slashpackage) sproot= ; slashpackage=false ;;
     --enable-absolute-paths|--enable-absolute-paths=yes) abspath=true ;;
     --disable-absolute-paths|--enable-absolute-paths=no) abspath=false ;;
+${configure_case_lines}
+    --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
     --enable-*|--disable-*|--with-*|--without-*|--*dir=*) ;;
     --host=*|--target=*) target=${arg#*=} ;;
     --build=*) build=${arg#*=} ;;
@@ -227,7 +234,7 @@ fi
 
 # Expand installation directories
 stripdir prefix
-for i in exec_prefix dynlibdir libexecdir bindir libdir includedir pkgconfdir sysdeps sproot ; do
+for i in exec_prefix dynlibdir libexecdir bindir libdir includedir sysconfdir pkgconfdir sysdeps sproot ${configure_expand_dirs} ; do
   eval tmp=\${$i}
   eval $i=$tmp
   stripdir $i
@@ -296,6 +303,7 @@ if $slashpackage ; then
   libexecdir=$bindir
   includedir=${home}/include
   pkgconfdir=${home}/pkgconfig
+${configure_slashpackage_other}
 fi
 
 # Get usable temp filenames
@@ -370,15 +378,15 @@ if [ "x$target" != "x$(cat $sysdeps/target)" ] ; then
   exit 1
 fi
 
+if $allpic ; then
+  tryflag CPPFLAGS_AUTO -fPIC
+fi
 spawn_lib=$(cat $sysdeps/spawn.lib)
 socket_lib=$(cat $sysdeps/socket.lib)
 sysclock_lib=$(cat $sysdeps/sysclock.lib)
 timer_lib=$(cat $sysdeps/timer.lib)
 util_lib=$(cat $sysdeps/util.lib)
 
-if $allpic ; then
-  tryflag CPPFLAGS_AUTO -fPIC
-fi
 tryflag CFLAGS_AUTO -std=c99
 tryflag CFLAGS -fomit-frame-pointer
 tryflag CFLAGS_AUTO -fno-exceptions
@@ -413,6 +421,8 @@ else
   LDFLAGS_NOSHARED="${LDFLAGS_NOSHARED}${addlibdpath}"
 fi
 
+${configure_extra_checks}
+
 echo "Creating config.mak..."
 cmdline=$(quote "$0")
 for i ; do cmdline="$cmdline $(quote "$i")" ; done
@@ -431,6 +441,7 @@ libexecdir := $libexecdir
 bindir := $bindir
 libdir := $libdir
 includedir := $includedir
+sysconfdir := $sysconfdir
 pkgconfdir := $pkgconfdir
 sysdeps := $sysdeps
 slashpackage := $slashpackage
@@ -466,6 +477,7 @@ if $allstatic ; then
   echo "DO_ALLSTATIC := 1"
 else
   echo ".LIBPATTERNS := lib%.so"
+  echo "DO_ALLSTATIC :="
 fi
 if $static ; then
   echo "DO_STATIC := 1"
@@ -487,7 +499,7 @@ if $allpic ; then
 else
   echo "STATIC_LIBS_ARE_PIC :="
 fi
-
+${configure_generate_make}
 exec 1>&3 3>&-
 echo "  ... done."
 
@@ -507,14 +519,19 @@ EOF
 if $slashpackage ; then
   echo "#define ${package_macro_name}_BINPREFIX \"$bindir/\""
   echo "#define ${package_macro_name}_EXTBINPREFIX \"$extbinprefix/\""
+  echo "#define ${package_macro_name}_EXTLIBEXECPREFIX \"$extbinprefix/\""
 elif $abspath ; then
   echo "#define ${package_macro_name}_BINPREFIX \"$bindir/\""
   echo "#define ${package_macro_name}_EXTBINPREFIX \"$bindir/\""
+  echo "#define ${package_macro_name}_EXTLIBEXECPREFIX \"$libexecdir/\""
 else
   echo "#define ${package_macro_name}_BINPREFIX \"\""
   echo "#define ${package_macro_name}_EXTBINPREFIX \"\""
+  echo "#define ${package_macro_name}_EXTLIBEXECPREFIX \"$libexecdir/\""
 fi
 echo "#define ${package_macro_name}_LIBEXECPREFIX \"$libexecdir/\""
+echo "#define ${package_macro_name}_SYSCONFPREFIX \"$sysconfdir/\""
+${configure_generate_configh}
 echo
 echo "#endif"
 exec 1>&3 3>&-

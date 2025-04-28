@@ -11,3 +11,4 @@ skabus-rpc-client
 LIBEXEC_TARGETS :=
 
 LIB_DEFS := SKABUS=skabus
+SKABUS_DESCRIPTION := The skabus client library.
